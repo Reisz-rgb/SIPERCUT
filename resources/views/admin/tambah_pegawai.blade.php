@@ -161,9 +161,14 @@
                         <i class="bi bi-chevron-down small d-none d-md-block"></i>
                     </div>
                      <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 mt-2 p-2 rounded-3">
-                        <li><a class="dropdown-item rounded small" href="#">Profile Saya</a></li>
+                        <li><a class="dropdown-item rounded small" href="{{ route('admin.profil') }}">Profile Saya</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item rounded small text-danger" href="#">Logout</a></li>
+                        <li>
+                            <form action="{{ route('logout') }}" method="POST" class="m-0">
+                                @csrf
+                                <button type="submit" class="dropdown-item rounded small text-danger">Logout</button>
+                            </form>
+                        </li>
                     </ul>
                 </div>
             </div>
