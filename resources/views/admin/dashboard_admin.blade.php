@@ -88,9 +88,6 @@
                     <div class="card-content mb-4 h-100">
                         <div class="card-header-custom bg-white">
                             <h6 class="m-0 fw-bold text-dark">Statistik Bulanan</h6>
-                            <button class="btn btn-sm btn-outline-light text-muted border">
-                                <i class="bi bi-download me-1"></i> Report
-                            </button>
                         </div>
                         <div class="p-4" style="height: 320px;">
                             <canvas id="statsChart"></canvas>
