@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\Cuti;
 use App\Models\LeaveRequest;
 use App\Models\LeaveBalance;
+use PhpOffice\PhpWord\TemplateProcessor;
+use Carbon\Carbon;
 
 class UserController extends Controller
 {
@@ -196,5 +198,100 @@ class UserController extends Controller
         $leaves = $query->paginate(10);
         
         return view('user.RiwayatPage', compact('leaves', 'user', 'status'));
+    }
+    
+    /**
+     * Download surat cuti in DOCX format
+     */
+    public function downloadSuratCuti($id)
+    {
+        $user = Auth::user();
+        
+        // Ambil data leave request
+        $leave = LeaveRequest::where('id', $id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+        
+        // Path template
+        $templatePath = storage_path('app/templates/surat_cuti_template.docx');
+        
+        if (!file_exists($templatePath)) {
+            return back()->with('error', 'Template surat cuti tidak ditemukan.');
+        }
+        
+        // Load template
+        $templateProcessor = new TemplateProcessor($templatePath);
+        
+        // Hitung masa kerja
+        $joinDate = $user->join_date ? Carbon::parse($user->join_date) : now()->subYears(5);
+        $workYears = floor($joinDate->diffInYears(now()));
+        $workMonths = floor($joinDate->copy()->addYears($workYears)->diffInMonths(now()));
+        $masaKerja = $workYears . ' tahun ' . ($workMonths > 0 ? $workMonths . ' bulan' : '');
+        
+        // Get leave balance
+        $currentYear = now()->year;
+        $leaveBalance = LeaveBalance::calculateTotalAvailable($user->id, $currentYear);
+        
+        // DATA PEGAWAI
+        $templateProcessor->setValue('NAMA', $user->name);
+        $templateProcessor->setValue('NIP', $user->nip);
+        $templateProcessor->setValue('JABATAN', $user->jabatan ?? 'Pegawai');
+        $templateProcessor->setValue('MASA_KERJA', $masaKerja);
+        $templateProcessor->setValue('UNIT_KERJA', $user->bidang_unit ?? 'DISDIKBUDPORA KABUPATEN SEMARANG');
+        
+        // JENIS CUTI (Checkbox)
+        $jenisCutiMap = [
+            'Cuti Tahunan' => 'CUTI_TAHUNAN',
+            'Cuti Besar' => 'CUTI_BESAR',
+            'Cuti Sakit' => 'CUTI_SAKIT',
+            'Cuti Melahirkan' => 'CUTI_MELAHIRKAN',
+            'Cuti Karena Alasan Penting' => 'CUTI_PENTING',
+            'Cuti di Luar Tanggungan Negara' => 'CUTI_TANGGUNGAN',
+        ];
+        
+        foreach ($jenisCutiMap as $jenis => $placeholder) {
+            $templateProcessor->setValue($placeholder, $leave->jenis_cuti === $jenis ? 'v' : '');
+        }
+        
+        // ALASAN CUTI
+        $templateProcessor->setValue('ALASAN', $leave->reason);
+        
+        // LAMA CUTI
+        $templateProcessor->setValue('LAMA_HARI', $leave->duration);
+        $templateProcessor->setValue('TGL_MULAI', Carbon::parse($leave->start_date)->format('d F Y'));
+        $templateProcessor->setValue('TGL_SELESAI', Carbon::parse($leave->end_date)->format('d F Y'));
+        
+        // CATATAN CUTI (Sisa)
+        $templateProcessor->setValue('TAHUN_N', $currentYear);
+        $templateProcessor->setValue('SISA_N2', $leaveBalance['n2']['remaining'] ?? 0);
+        $templateProcessor->setValue('TAHUN_N2', $leaveBalance['n2']['year'] ?? '');
+        $templateProcessor->setValue('SISA_N1', $leaveBalance['n1']['remaining'] ?? 0);
+        $templateProcessor->setValue('TAHUN_N1', $leaveBalance['n1']['year'] ?? '');
+        $templateProcessor->setValue('SISA_N', $leaveBalance['n']['remaining'] ?? 0);
+        
+        // ALAMAT SELAMA CUTI
+        $templateProcessor->setValue('ALAMAT_CUTI', $leave->address ?? '-');
+        $templateProcessor->setValue('TELP', $leave->phone ?? $user->phone);
+        
+        // TANGGAL SURAT
+        $templateProcessor->setValue('TANGGAL_SURAT', Carbon::parse($leave->created_at)->translatedFormat('d F Y'));
+        $templateProcessor->setValue('KOTA', 'Ungaran');
+        
+        // Generate filename
+        $fileName = 'Surat_Cuti_' . str_replace(' ', '_', $user->name) . '_' . Carbon::parse($leave->start_date)->format('Y-m-d') . '.docx';
+        $fileName = preg_replace('/[^A-Za-z0-9_\-\.]/', '', $fileName);
+        
+        // Save to temp
+        $tempFile = storage_path('app/temp/' . $fileName);
+        
+        // Ensure temp directory exists
+        if (!file_exists(storage_path('app/temp'))) {
+            mkdir(storage_path('app/temp'), 0755, true);
+        }
+        
+        $templateProcessor->saveAs($tempFile);
+        
+        // Download and delete
+        return response()->download($tempFile, $fileName)->deleteFileAfterSend(true);
     }
 }

@@ -83,6 +83,9 @@ Route::middleware(['auth'])->prefix('user')->name('user.')->group(function () {
     // Riwayat
     Route::get('/riwayat', [UserController::class, 'history'])->name('riwayat');
 
+    // Download Surat Cuti
+    Route::get('/cuti/{id}/download', [UserController::class, 'downloadSuratCuti'])->name('cuti.download');
+
     // Pengajuan Cuti
     Route::get('/pengajuan-cuti', [CutiController::class, 'create'])->name('cuti.create');
     Route::post('/pengajuan-cuti', [CutiController::class, 'store'])->name('cuti.store');

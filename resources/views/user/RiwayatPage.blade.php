@@ -207,10 +207,19 @@
             <div class="px-6 py-4 border-t border-slate-100 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <button class="px-5 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-extrabold text-slate-700" id="cancelBtn" type="button">Tutup</button>
 
-                <a href="{{ route('user.cuti.create') }}" id="btnEditLink" class="hidden sm:inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-extrabold text-white btn-primary">
-                    <i class="bi bi-pencil-square"></i>
-                    Perbaiki Pengajuan
-                </a>
+                <div class="flex gap-2">
+                    {{-- Tombol Download Surat (Hanya untuk approved) --}}
+                    <a href="{{ route('user.cuti.download', ['id' => 0]) }}" id="btnDownloadSurat" class="hidden sm:inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-extrabold text-white bg-green-600 hover:bg-green-700 transition-all">
+                        <i class="bi bi-download"></i>
+                        Download Surat
+                    </a>
+                    
+                    {{-- Tombol Edit (Hanya untuk rejected) --}}
+                    <a href="{{ route('user.cuti.create') }}" id="btnEditLink" class="hidden sm:inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-extrabold text-white btn-primary">
+                        <i class="bi bi-pencil-square"></i>
+                        Perbaiki Pengajuan
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -229,6 +238,7 @@
         const fileNameDisplay = document.getElementById("file-name-display");
         const dropTextLabel = document.getElementById("drop-text-label");
         const btnEditLink = document.getElementById("btnEditLink");
+        const btnDownloadSurat = document.getElementById("btnDownloadSurat");
 
         const f = {
             id: document.getElementById("f_id"),
@@ -282,6 +292,7 @@
             fileInput.disabled = true;
 
             btnEditLink.style.display = 'none';
+            btnDownloadSurat.style.display = 'none';
             statusAlert.classList.add('hidden');
 
             if (status === "Ditolak") {
@@ -299,6 +310,12 @@
                 statusAlert.style.background = "#e8f6ee";
                 statusAlert.style.color = "#1f7a46";
                 statusAlert.textContent = "Pengajuan ini telah disetujui.";
+                btnDownloadSurat.style.display = 'inline-flex';
+                // Set URL download dengan ID dari activeData
+                const leaveId = activeBtn.closest('.h-card').getAttribute('data-leave-id');
+                if(leaveId) {
+                    btnDownloadSurat.href = `/user/cuti/${leaveId}/download`;
+                }
             } else {
                 modalTitle.textContent = "Detail Pengajuan";
                 f.status.style.color = "#a56a00";
