@@ -4,70 +4,301 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIIPUL - Disdikbudpora Kab. Semarang</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-    <style> body { font-family: 'Inter', sans-serif; } </style>
+
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            --primary: #9E2A2B;
+            --primary-dark: #781F1F;
+            --bg-body: #F1F5F9;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-body);
+            color: #334155;
+            overflow-x: hidden;
+        }
+
+        /* background image layer */
+        .bg-hero {
+            position: relative;
+            min-height: 100vh;
+            background-image:
+                linear-gradient(135deg, rgba(158, 42, 43, 0.88) 0%, rgba(86, 22, 22, 0.88) 55%, rgba(15, 23, 42, 0.78) 100%),
+                url('{{ asset('images/landing-bg.jpg') }}');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+
+        .topbar {
+            position: sticky;
+            top: 0;
+            z-index: 1100;
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.08);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #fff;
+        }
+
+        .brand-title {
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            line-height: 1.1;
+        }
+
+        .brand-sub {
+            font-size: 0.75rem;
+            opacity: 0.85;
+            letter-spacing: 0.06em;
+        }
+
+        .btn-primary-soft {
+            background: #fff;
+            color: var(--primary);
+            border: 1px solid rgba(255,255,255,0.45);
+            font-weight: 800;
+            border-radius: 14px;
+            padding: 10px 16px;
+            box-shadow: 0 10px 25px -10px rgba(0,0,0,0.35);
+        }
+        .btn-primary-soft:hover {
+            background: rgba(255,255,255,0.92);
+            color: var(--primary-dark);
+        }
+
+        .hero-wrap {
+            padding: 56px 0 40px 0;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.18);
+            color: #fff;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .hero-title {
+            color: #fff;
+            font-weight: 900;
+            letter-spacing: -1px;
+            font-size: clamp(2.2rem, 4.2vw, 3.6rem);
+            margin: 14px 0 10px 0;
+        }
+
+        .hero-lead {
+            color: rgba(255,255,255,0.9);
+            max-width: 52ch;
+            font-size: 1.05rem;
+        }
+
+        .card-glass {
+            background: rgba(255,255,255,0.92);
+            border: 1px solid rgba(255,255,255,0.55);
+            border-radius: 18px;
+            box-shadow: 0 18px 45px -20px rgba(0,0,0,0.45);
+            overflow: hidden;
+        }
+
+        .card-glass .card-head {
+            padding: 22px 22px 16px 22px;
+            border-bottom: 1px dashed #E2E8F0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .pill {
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: #FEF2F2;
+            color: var(--primary);
+            font-weight: 800;
+            font-size: 0.85rem;
+        }
+
+        .feature {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            padding: 14px 22px;
+        }
+
+        .feature + .feature {
+            border-top: 1px solid #F1F5F9;
+        }
+
+        .feature-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(158, 42, 43, 0.12) 0%, rgba(158, 42, 43, 0.06) 100%);
+            display: grid;
+            place-items: center;
+            color: var(--primary);
+            flex: 0 0 auto;
+        }
+
+        .feature-title { font-weight: 900; margin: 0; }
+        .feature-text { margin: 2px 0 0 0; color: #64748B; font-size: 0.92rem; }
+
+        .cta-row {
+            padding: 18px 22px 22px 22px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-gradient {
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border: none;
+            color: #fff;
+            font-weight: 900;
+            border-radius: 14px;
+            padding: 12px 16px;
+            box-shadow: 0 10px 25px -12px rgba(158, 42, 43, 0.55);
+        }
+        .btn-gradient:hover { filter: brightness(0.98); }
+
+        .btn-outline-light-soft {
+            background: transparent;
+            border: 1px solid rgba(15, 23, 42, 0.15);
+            color: #0F172A;
+            font-weight: 800;
+            border-radius: 14px;
+            padding: 12px 16px;
+        }
+        .btn-outline-light-soft:hover { background: rgba(15, 23, 42, 0.04); }
+
+        .footer {
+            color: rgba(255,255,255,0.85);
+            font-size: 0.85rem;
+            padding: 22px 0 28px 0;
+        }
+
+        @media (max-width: 992px) {
+            .hero-wrap { padding-top: 34px; }
+            .hero-lead { font-size: 1rem; }
+        }
+    </style>
 </head>
-<body class="bg-white">
 
-    <header class="bg-[#9E2A2B] text-white py-4 shadow-md">
-        <div class="container mx-auto px-6 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-                <img src="{{ asset('logokabupatensemarang.png') }}" alt="Logo" class="h-16 w-auto object-contain">
-                <div class="leading-tight">
-                    <h1 class="font-bold text-lg tracking-wide">DISDIKBUDPORA</h1>
-                    <p class="text-xs font-light tracking-wider">KAB. SEMARANG</p>
+<body>
+    <div class="bg-hero">
+        <!-- Topbar (sticky, selaras feel admin/user) -->
+        <header class="topbar">
+            <div class="container py-3 px-3 px-md-4 d-flex align-items-center justify-content-between">
+                <a class="brand" href="#">
+                    <img src="{{ asset('logokabupatensemarang.png') }}" alt="Logo" width="40" height="40" style="object-fit: contain;">
+                    <div>
+                        <div class="brand-title">SIIPUL</div>
+                        <div class="brand-sub">DISDIKBUDPORA KAB. SEMARANG</div>
+                    </div>
+                </a>
+
+                {{-- Tombol Login/Register dihapus (sesuai permintaan) --}}
+            </div>
+        </header>
+
+        <!-- Hero -->
+        <main class="container hero-wrap px-3 px-md-4">
+            <div class="row g-4 align-items-center">
+                <div class="col-lg-6">
+                    <div class="hero-badge">
+                        <i class="bi bi-shield-check"></i>
+                        Sistem Informasi Izin & Cuti Pegawai
+                    </div>
+
+                    <h1 class="hero-title">Kelola Izin & Cuti Pegawai<br class="d-none d-lg-block"> dengan Cepat dan Rapi</h1>
+
+                    <p class="hero-lead mb-0">
+                        Satu pintu untuk pengajuan cuti, monitoring status, dan rekapitulasi.
+                        Desainnya dibuat konsisten dengan tampilan Admin/User SIIPUL.
+                    </p>
                 </div>
-            </div>
-            <a href="{{ url('/login') }}" class="bg-white text-[#9E2A2B] px-6 py-2 rounded-md font-bold text-sm flex items-center gap-2 hover:bg-gray-100 transition shadow-sm">
-                Login/Register
-            </a>
-        </div>
-    </header>
 
-    <section class="text-center pt-16 pb-12 bg-white">
-        <div class="container mx-auto px-4">
-            <h2 class="text-[#9E2A2B] font-bold text-2xl mb-2">Selamat Datang di Aplikasi</h2>
-            <h1 class="text-black font-extrabold text-5xl mb-8">SIIPUL</h1>
-            <div class="flex justify-center mb-8">
-                <img src="{{ asset('logokabupatensemarang.png') }}" alt="Logo Besar" class="h-32 w-auto object-contain drop-shadow-md">
-            </div>
-            <div class="max-w-2xl mx-auto text-gray-600 text-sm leading-relaxed">
-                <p class="font-bold text-gray-800">Sistem Informasi Izin dan Cuti Pegawai <span class="font-normal text-gray-600">Disdikbudpora Kab. Semarang.</span></p>
-            </div>
-        </div>
-    </section>
+                <div class="col-lg-6">
+                    <div class="card-glass">
+                        <div class="card-head">
+                            <div class="d-flex align-items-center gap-3">
+                                <div style="width:44px;height:44px;border-radius:14px;background:linear-gradient(135deg,var(--primary) 0%, var(--primary-dark) 100%);display:grid;place-items:center;color:white;box-shadow:0 10px 22px -12px rgba(158,42,43,0.55);">
+                                    <i class="bi bi-calendar2-check" style="font-size:1.2rem"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight:900; font-size:1.05rem;">Mulai dengan SIIPUL</div>
+                                    <div style="color:#64748B; font-size:0.9rem;">Panduan singkat cara mengajukan cuti</div>
+                                </div>
+                            </div>
+                            <span class="pill">2026</span>
+                        </div>
 
-    <section class="bg-[#F8F9FA] py-16">
-        <div class="container mx-auto px-4 text-center">
-            <h3 class="text-[#9E2A2B] font-bold text-2xl mb-2">Layanan Kami</h3>
-            <div class="h-1 w-16 bg-[#9E2A2B] mx-auto mb-4 rounded-full"></div>
-            
-            <div class="flex justify-center mt-10">
-                <div class="bg-white rounded-xl shadow-lg p-8 w-full max-w-sm border border-gray-100">
-                    <div class="flex justify-center mb-6">
-                        <div class="bg-red-50 p-4 rounded-2xl">
-                             <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-[#9E2A2B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
+                        <div class="feature">
+                            <div class="feature-icon"><span style="font-weight:900;">1</span></div>
+                            <div>
+                                <p class="feature-title">Login ke SIIPUL</p>
+                                <p class="feature-text">Masuk pakai akun kamu. Jika belum punya akun, minta dibuatkan oleh admin/kepegawaian.</p>
+                            </div>
+                        </div>
+
+                        <div class="feature">
+                            <div class="feature-icon"><span style="font-weight:900;">2</span></div>
+                            <div>
+                                <p class="feature-title">Buka menu Pengajuan Cuti</p>
+                                <p class="feature-text">Pilih jenis cuti, lalu isi tanggal mulai–selesai sesuai kebutuhan.</p>
+                            </div>
+                        </div>
+
+                        <div class="feature">
+                            <div class="feature-icon"><span style="font-weight:900;">3</span></div>
+                            <div>
+                                <p class="feature-title">Lengkapi data & lampiran</p>
+                                <p class="feature-text">Isi alasan cuti dan upload lampiran bila diperlukan (mis. surat dokter).</p>
+                            </div>
+                        </div>
+
+                        <div class="feature">
+                            <div class="feature-icon"><span style="font-weight:900;">4</span></div>
+                            <div>
+                                <p class="feature-title">Kirim & pantau status</p>
+                                <p class="feature-text">Klik <b>Ajukan</b>, lalu pantau proses persetujuan di Monitoring/Riwayat.</p>
+                            </div>
+                        </div>
+
+                        <div class="cta-row">
+                            <a href="{{ url('/login') }}" class="btn btn-gradient d-inline-flex align-items-center gap-2">
+                                <i class="bi bi-arrow-right-circle"></i>
+                                Masuk & Ajukan Cuti
+                            </a>
+                            {{-- Tombol Buat Akun dihapus (sesuai permintaan) --}}
                         </div>
                     </div>
-                    <h4 class="text-gray-800 font-bold text-lg mb-2">Pengajuan Cuti</h4>
-                    <p class="text-gray-500 text-xs mb-8">Layanan pengajuan berbagai jenis cuti pegawai secara online.</p>
-                    
-                    <a href="{{ url('/login') }}" class="block w-full bg-[#9E2A2B] text-white font-semibold py-3 rounded-lg hover:bg-red-800 transition flex justify-center items-center gap-2">
-                        Ajukan Sekarang
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
-                    </a>
                 </div>
             </div>
-        </div>
-    </section>
 
-    <footer class="bg-[#9E2A2B] text-white py-6 mt-auto text-center text-xs">
-        <span class="font-bold">© 2026</span> Disdikbudpora Kabupaten Semarang
-    </footer>
+            <div class="footer text-center">
+                <div class="opacity-75">© 2026 Disdikbudpora Kabupaten Semarang</div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
