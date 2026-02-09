@@ -262,27 +262,31 @@
                     </div>
 
                     <div class="col-12 col-md-3">
-                        <label class="form-label-custom">Filter Pegawai</label>
-                        <select name="pegawai_id" class="form-select-custom w-100" onchange="this.form.submit()">
-                            <option value="">Semua Pegawai</option>
-                            @if(isset($listPegawai))
-                                @foreach($listPegawai as $p)
-                                    <option value="{{ $p->id }}" {{ request('pegawai_id') == $p->id ? 'selected' : '' }}>
-                                        {{ $p->name }} - {{ $p->nip }}
-                                    </option>
+                        <label class="form-label-custom">Filter Bidang / Unit</label>
+                        <select name="bidang_unit" id="selectBidang" class="form-select-custom w-100">
+                            <option value="">Semua Bidang</option>
+                            @if(isset($listBidang))
+                                @foreach($listBidang as $bidang)
+                                    @if($bidang) 
+                                        <option value="{{ $bidang }}" {{ request('bidang_unit') == $bidang ? 'selected' : '' }}>
+                                            {{ $bidang }}
+                                        </option>
+                                    @endif
                                 @endforeach
                             @endif
                         </select>
                     </div>
 
                     <div class="col-12 col-md-3">
-                        <label class="form-label-custom">Cari Nama / Unit</label>
+                        <label class="form-label-custom">Cari Nama Pegawai</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0" style="border-radius: 10px 0 0 10px; border-color: #E2E8F0;">
                                 <i class="bi bi-search text-muted"></i>
                             </span>
                             <input type="text" name="search" class="form-control form-control-custom border-start-0 ps-0"
-                                   placeholder="Ketik kata kunci..." value="{{ request('search') }}" style="border-radius: 0 10px 10px 0;">
+                                   placeholder="Ketik nama lalu Enter..." 
+                                   value="{{ request('search') }}" 
+                                   style="border-radius: 0 10px 10px 0;">
                         </div>
                     </div>
 
@@ -438,51 +442,57 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('show');
-    const overlay = document.getElementById('sidebarOverlay');
-    if (overlay.classList.contains('d-none')) {
-        overlay.classList.remove('d-none');
-    } else {
-        overlay.classList.add('d-none');
-    }
-}
+    $(document).ready(function() {
+        
+        $('#selectBidang').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            placeholder: 'Cari atau Pilih Bidang...',
+            allowClear: true,
+            dropdownParent: $('#selectBidang').parent() 
+        });
 
-const labels = {!! json_encode($chartLabels) !!};
-const dataValues = {!! json_encode($chartValues) !!};
+        $('#selectBidang').on('select2:select select2:clear', function(e) {
+            $(this).closest('form').submit();
+        });
 
-const ctx = document.getElementById('jenisCutiChart').getContext('2d');
-new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-        labels: labels.length ? labels : ['Belum ada data'],
-        datasets: [{
-            data: dataValues.length ? dataValues : [1],
-            backgroundColor: ['#10B981','#F59E0B','#EF4444','#3B82F6','#6B7280','#8B5CF6'],
-            borderWidth: 0,
-            hoverOffset: 10
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '65%',
-        plugins: {
-            legend: {
-                position: 'right',
-                labels: {
-                    usePointStyle: true,
-                    boxWidth: 8,
-                    padding: 20,
-                    font: { family: "'Plus Jakarta Sans', sans-serif", size: 12 }
-                }
+        const labels = {!! json_encode($chartLabels) !!};
+        const dataValues = {!! json_encode($chartValues) !!};
+
+        const ctx = document.getElementById('jenisCutiChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels.length ? labels : ['Belum ada data'],
+                datasets: [{
+                    data: dataValues.length ? dataValues : [1],
+                    backgroundColor: ['#10B981','#F59E0B','#EF4444','#3B82F6','#6B7280','#8B5CF6'],
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
             },
-            tooltip: { enabled: labels.length > 0 }
-        }
-    }
-});
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            padding: 20,
+                            font: { family: "'Plus Jakarta Sans', sans-serif", size: 12 }
+                        }
+                    },
+                    tooltip: { enabled: labels.length > 0 }
+                }
+            }
+        });
+    });
 </script>
 @endpush

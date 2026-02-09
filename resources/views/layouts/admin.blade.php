@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Admin - SIIPUL')</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" />
     
     <style>
         /* Variables */
@@ -24,7 +26,7 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg-body);
             color: #334155;
-            overflow-x: hidden; /* Prevent horizontal scroll */
+            overflow-x: hidden;
         }
 
         /* Custom Scrollbar */
@@ -41,7 +43,6 @@
             top: 0; left: 0;
             background: #FFFFFF;
             border-right: 1px dashed #E2E8F0;
-            /* IMPORTANT: keep sidebar clickable above any overlays/content */
             z-index: 1060 !important;
             padding: 24px;
             display: flex; flex-direction: column;
@@ -67,7 +68,6 @@
 
         .nav-link:hover { background-color: #FEF2F2; color: var(--primary); }
 
-        /* Active State */
         .nav-link.active {
             background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
@@ -108,7 +108,7 @@
         /* Cards & Widgets */
         .dashboard-container {
             padding: 0 40px 40px 40px;
-            margin-top: -80px; /* Overlap */
+            margin-top: -80px;
         }
 
         .card-stat {
@@ -150,7 +150,6 @@
         #sidebarOverlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.5);
-            /* must be BELOW sidebar, ABOVE main content */
             z-index: 1055 !important;
             display: none;
             backdrop-filter: blur(2px);
@@ -166,6 +165,17 @@
             .hero-banner { border-radius: 0; padding: 20px; height: auto; padding-bottom: 100px; }
             .dashboard-container { padding: 0 20px 20px 20px; }
             .mobile-toggler { display: block; }
+        }
+
+        /* Select2 Custom Style */
+        .select2-container--bootstrap-5 .select2-selection {
+            border: 1px solid #E2E8F0 !important;
+            border-radius: 10px !important;
+            padding: 5px 10px !important;
+            background-color: #F8FAFC !important;
+            min-height: 45px !important;
+            display: flex;
+            align-items: center;
         }
     </style>
 
@@ -224,41 +234,42 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+    
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    
     <script>
-        // Mobile Sidebar (works consistently across all admin pages)
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebarOverlay');
+        $(document).ready(function() {
+            // Mobile Sidebar (Logic Global Sidebar)
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
 
-        // expose globally so inline onclick="toggleSidebar()" keeps working
-        window.toggleSidebar = function toggleSidebar() {
-            if (!sidebar || !overlay) return;
-            const willOpen = !sidebar.classList.contains('show');
-            sidebar.classList.toggle('show', willOpen);
-            overlay.classList.toggle('show', willOpen);
-            document.body.style.overflow = willOpen ? 'hidden' : '';
-        };
+            window.toggleSidebar = function toggleSidebar() {
+                if (!sidebar || !overlay) return;
+                const willOpen = !sidebar.classList.contains('show');
+                sidebar.classList.toggle('show', willOpen);
+                overlay.classList.toggle('show', willOpen);
+                document.body.style.overflow = willOpen ? 'hidden' : '';
+            };
 
-        window.closeSidebar = function closeSidebar() {
-            if (!sidebar || !overlay) return;
-            sidebar.classList.remove('show');
-            overlay.classList.remove('show');
-            document.body.style.overflow = '';
-        };
+            window.closeSidebar = function closeSidebar() {
+                if (!sidebar || !overlay) return;
+                sidebar.classList.remove('show');
+                overlay.classList.remove('show');
+                document.body.style.overflow = '';
+            };
 
-        // Bind ALL possible hamburger buttons used in your pages
-        document.querySelectorAll('.mobile-toggler, #btnToggleSidebar, [data-toggle-sidebar]')
-            .forEach((btn) => btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                window.toggleSidebar();
-            }));
+            document.querySelectorAll('.mobile-toggler, #btnToggleSidebar, [data-toggle-sidebar]')
+                .forEach((btn) => btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    window.toggleSidebar();
+                }));
 
-        // Close when clicking overlay
-        if (overlay) overlay.addEventListener('click', window.closeSidebar);
+            if (overlay) overlay.addEventListener('click', window.closeSidebar);
 
-        // Close when pressing ESC
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') window.closeSidebar();
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') window.closeSidebar();
+            });
         });
     </script>
 

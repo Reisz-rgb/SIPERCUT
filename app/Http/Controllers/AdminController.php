@@ -32,20 +32,38 @@ class AdminController extends Controller
     {
         $query = LeaveRequest::with('user');
 
-        if ($request->filled(['start_date', 'end_date'])) {
-            $query->whereBetween('start_date', [
-                $request->start_date,
-                $request->end_date
-            ]);
+        $filter = $request->input('filter', '1_bulan');
+
+        if ($filter == '1_bulan') {
+            $startDate = Carbon::now()->subMonth();
+            $titlePeriode = "1 Bulan Terakhir";
+        } elseif ($filter == '3_bulan') {
+            $startDate = Carbon::now()->subMonths(3);
+            $titlePeriode = "3 Bulan Terakhir";
+        } else {
+            $startDate = Carbon::now()->startOfYear();
+            $titlePeriode = "Tahun Ini (" . date('Y') . ")";
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        $query->where('created_at', '>=', $startDate);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('user', function($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%");
+            });
+        }
+        
+        if ($request->filled('bidang_unit')) {
+            $bidang = $request->bidang_unit;
+            $query->whereHas('user', function($q) use ($bidang) {
+                $q->where('bidang_unit', $bidang);
+            });
         }
 
         $data = $query->get();
 
-        return Pdf::loadView('admin.laporan_pdf', compact('data'))
+        return Pdf::loadView('admin.laporan_pdf', compact('data', 'titlePeriode'))
             ->download('laporan_cuti.pdf');
     }
 
@@ -214,10 +232,15 @@ class AdminController extends Controller
     }
 
     /* =====================================================
-     * 4. HALAMAN LAPORAN & ANALYTICS (DINAMIS)
+     * 4. HALAMAN LAPORAN & ANALYTICS (FIXED: bidang_unit)
      * ===================================================== */
     public function laporan(Request $request)
     {
+        $listBidang = User::whereNotNull('bidang_unit')
+                        ->where('bidang_unit', '!=', '') // Pastikan tidak kosong
+                        ->distinct()
+                        ->pluck('bidang_unit');
+
         // 1. Filter Rentang Waktu
         $filter = $request->input('filter', '1_bulan'); // Default 1 bulan
         $query = LeaveRequest::query();
@@ -236,11 +259,25 @@ class AdminController extends Controller
         // Terapkan filter tanggal ke query dasar
         $query->where('created_at', '>=', $startDate);
 
-        // 2. Hitung Statistik Card (Top)
-        // Kita hitung total dulu
+        
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('user', function($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('bidang_unit')) {
+            $bidang = $request->bidang_unit;
+            $query->whereHas('user', function($q) use ($bidang) {
+                $q->where('bidang_unit', $bidang);
+            });
+        }
+        // --------------------------------------
+
+        // 2. Hitung Statistik Card (Top) - Berdasarkan data yang SUDAH difilter
         $total = $query->count();
         
-        // Cloning query agar tidak merusak query dasar
         $approved = (clone $query)->where('status', 'approved')->count();
         $rejected = (clone $query)->where('status', 'rejected')->count();
         $pending  = (clone $query)->where('status', 'pending')->count();
@@ -250,8 +287,7 @@ class AdminController extends Controller
         $persenRejected = $total > 0 ? round(($rejected / $total) * 100, 1) : 0;
         $persenPending  = $total > 0 ? round(($pending / $total) * 100, 1) : 0;
 
-        // Rata-rata Proses (Selisih created_at dan updated_at untuk status finished)
-        // Hitung rata-rata detik proses
+        // Rata-rata Proses
         $avgSeconds = (clone $query)
             ->whereIn('status', ['approved', 'rejected'])
             ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, created_at, updated_at)) as avg_time')
@@ -268,13 +304,12 @@ class AdminController extends Controller
         $chartLabels = $jenisCutiStats->keys();
         $chartValues = $jenisCutiStats->values();
 
-        // 4. Data Tabel (Statistik per Unit Kerja)
-        // Asumsi: Table users punya kolom 'unit_kerja' atau 'jabatan'
+        // 4. Data Tabel (Statistik per Bidang Unit)
         $rawRequests = (clone $query)->with('user')->get();
 
         $unitStats = $rawRequests->groupBy(function($item) {
-            // Cek apakah user ada, lalu ambil unit_kerja (default 'Lainnya' jika null)
-            return $item->user->unit_kerja ?? $item->user->jabatan ?? 'Umum';
+            // Fix: Grouping berdasarkan 'bidang_unit'
+            return $item->user->bidang_unit ?? 'Umum';
         })->map(function($group, $unitName) {
             $totalUnit = $group->count();
             $appUnit   = $group->where('status', 'approved')->count();
@@ -293,6 +328,7 @@ class AdminController extends Controller
 
         return view('admin.laporan', compact(
             'filter', 'labelWaktu',
+            'listBidang', 
             'total', 'approved', 'rejected', 'pending',
             'persenApproved', 'persenRejected', 'persenPending',
             'avgDays',
