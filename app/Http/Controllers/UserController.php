@@ -200,98 +200,134 @@ class UserController extends Controller
         return view('user.RiwayatPage', compact('leaves', 'user', 'status'));
     }
     
-    /**
-     * Download surat cuti in DOCX format
-     */
     public function downloadSuratCuti($id)
     {
-        $user = Auth::user();
-        
-        // Ambil data leave request
-        $leave = LeaveRequest::where('id', $id)
-            ->where('user_id', $user->id)
-            ->firstOrFail();
-        
-        // Path template
-        $templatePath = storage_path('app/templates/surat_cuti_template.docx');
-        
-        if (!file_exists($templatePath)) {
-            return back()->with('error', 'Template surat cuti tidak ditemukan.');
+        // Bersihkan output buffer
+        while (ob_get_level()) {
+            ob_end_clean();
         }
         
-        // Load template
-        $templateProcessor = new TemplateProcessor($templatePath);
+        error_reporting(0);
+        ini_set('display_errors', '0');
         
-        // Hitung masa kerja
-        $joinDate = $user->join_date ? Carbon::parse($user->join_date) : now()->subYears(5);
-        $workYears = floor($joinDate->diffInYears(now()));
-        $workMonths = floor($joinDate->copy()->addYears($workYears)->diffInMonths(now()));
-        $masaKerja = $workYears . ' tahun ' . ($workMonths > 0 ? $workMonths . ' bulan' : '');
-        
-        // Get leave balance
-        $currentYear = now()->year;
-        $leaveBalance = LeaveBalance::calculateTotalAvailable($user->id, $currentYear);
-        
-        // DATA PEGAWAI
-        $templateProcessor->setValue('NAMA', $user->name);
-        $templateProcessor->setValue('NIP', $user->nip);
-        $templateProcessor->setValue('JABATAN', $user->jabatan ?? 'Pegawai');
-        $templateProcessor->setValue('MASA_KERJA', $masaKerja);
-        $templateProcessor->setValue('UNIT_KERJA', $user->bidang_unit ?? 'DISDIKBUDPORA KABUPATEN SEMARANG');
-        
-        // JENIS CUTI (Checkbox)
-        $jenisCutiMap = [
-            'Cuti Tahunan' => 'CUTI_TAHUNAN',
-            'Cuti Besar' => 'CUTI_BESAR',
-            'Cuti Sakit' => 'CUTI_SAKIT',
-            'Cuti Melahirkan' => 'CUTI_MELAHIRKAN',
-            'Cuti Karena Alasan Penting' => 'CUTI_PENTING',
-            'Cuti di Luar Tanggungan Negara' => 'CUTI_TANGGUNGAN',
-        ];
-        
-        foreach ($jenisCutiMap as $jenis => $placeholder) {
-            $templateProcessor->setValue($placeholder, $leave->jenis_cuti === $jenis ? 'v' : '');
+        try {
+            $leave = LeaveRequest::with('user')->findOrFail($id);
+            $user = $leave->user;
+            
+            $templatePath = storage_path('app/template/surat_cuti_template.docx');
+            
+            if (!file_exists($templatePath)) {
+                \Log::error('Template not found: ' . $templatePath);
+                abort(404, 'Template tidak ditemukan');
+            }
+            
+            $templateProcessor = new TemplateProcessor($templatePath);
+            
+            // Helper function untuk sanitize text
+            $sanitize = function($text) {
+                if (empty($text) || is_null($text)) return '-';
+                // Konversi ke string terlebih dahulu
+                $text = (string) $text;
+                // Hapus karakter control characters yang bisa corrupt XML
+                $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $text);
+                // Escape XML entities
+                $text = htmlspecialchars($text, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+                return $text;
+            };
+            
+            // Set data dengan sanitization
+            $templateProcessor->setValue('TANGGAL_SURAT', Carbon::now()->isoFormat('D MMMM YYYY'));
+            $templateProcessor->setValue('NAMA', $sanitize($user->name));
+            $templateProcessor->setValue('NIP', $sanitize($user->nip));
+            $templateProcessor->setValue('JABATAN', $sanitize($user->jabatan));
+            $templateProcessor->setValue('MASA_KERJA', $sanitize($user->masa_kerja));
+            $templateProcessor->setValue('UNIT_KERJA', $sanitize($user->unit_kerja));
+            
+            // Set jenis cuti checkboxes
+            $jenisMap = [
+                'Cuti Tahunan' => 'CUTI_TAHUNAN',
+                'Cuti Besar' => 'CUTI_BESAR',
+                'Cuti Sakit' => 'CUTI_SAKIT',
+                'Cuti Melahirkan' => 'CUTI_MELAHIRKAN',
+                'Cuti Karena Alasan Penting' => 'CUTI_KARENA_ALASAN_PENTING',
+                'Cuti di Luar Tanggungan Negara' => 'CUTI_DI_LUAR_TANGGUNGAN_NEGARA',
+            ];
+            
+            foreach ($jenisMap as $jenis => $placeholder) {
+                $templateProcessor->setValue($placeholder, 
+                    $leave->jenis_cuti === $jenis ? 'X' : ''
+                );
+            }
+            
+            $templateProcessor->setValue('ALASAN', $sanitize($leave->reason));
+            $templateProcessor->setValue('LAMA_HARI', $leave->duration . ' hari');
+            $templateProcessor->setValue('TANGGAL_MULAI', 
+                Carbon::parse($leave->start_date)->isoFormat('D MMMM YYYY')
+            );
+            $templateProcessor->setValue('TANGGAL_SELESAI', 
+                Carbon::parse($leave->end_date)->isoFormat('D MMMM YYYY')
+            );
+            
+            $templateProcessor->setValue('SISA_N-2', $sanitize($user->sisa_cuti_n2));
+            $templateProcessor->setValue('SISA_N-1', $sanitize($user->sisa_cuti_n1));
+            $templateProcessor->setValue('N', $sanitize($user->sisa_cuti_n));
+            $templateProcessor->setValue('KETERANGAN', '-');
+            
+            $templateProcessor->setValue('ALAMAT', $sanitize($leave->address));
+            $templateProcessor->setValue('TELP', $sanitize($leave->phone));
+            
+            $templateProcessor->setValue('DISETUJUI', $leave->status === LeaveRequest::STATUS_APPROVED ? 'X' : '');
+            $templateProcessor->setValue('MENUNGGU', $leave->status === LeaveRequest::STATUS_PENDING ? 'X' : '');
+            $templateProcessor->setValue('TIDAK_DISETUJUI', $leave->status === LeaveRequest::STATUS_REJECTED ? 'X' : '');
+            
+            // Generate filename yang aman
+            $safeName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $user->name);
+            $fileName = 'Surat_Cuti_' . $safeName . '_' . date('Ymd_His') . '.docx';
+            
+            $tempPath = storage_path('app/temp');
+            if (!file_exists($tempPath)) {
+                mkdir($tempPath, 0755, true);
+            }
+            
+            $tempFile = $tempPath . '/' . $fileName;
+            
+            // Save file
+            $templateProcessor->saveAs($tempFile);
+            
+            if (!file_exists($tempFile)) {
+                throw new \Exception('File tidak berhasil dibuat');
+            }
+            
+            $fileSize = filesize($tempFile);
+            \Log::info('Generated file size: ' . $fileSize . ' bytes');
+            
+            // Validasi ukuran
+            if ($fileSize < 10000) {
+                \Log::warning('File size suspiciously small: ' . $fileSize . ' bytes');
+            }
+            
+            // Clear buffer sekali lagi sebelum download
+            while (ob_get_level()) {
+                ob_end_clean();
+            }
+            
+            // Return file dengan header yang tepat
+            return response()->download($tempFile, $fileName, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache',
+                'Expires' => '0',
+            ])->deleteFileAfterSend(true);
+            
+        } catch (\Exception $e) {
+            \Log::error('Exception in downloadSuratCuti: ' . $e->getMessage());
+            
+            if (isset($tempFile) && file_exists($tempFile)) {
+                unlink($tempFile);
+            }
+            
+            return back()->with('error', 'Gagal membuat surat cuti: ' . $e->getMessage());
         }
-        
-        // ALASAN CUTI
-        $templateProcessor->setValue('ALASAN', $leave->reason);
-        
-        // LAMA CUTI
-        $templateProcessor->setValue('LAMA_HARI', $leave->duration);
-        $templateProcessor->setValue('TGL_MULAI', Carbon::parse($leave->start_date)->format('d F Y'));
-        $templateProcessor->setValue('TGL_SELESAI', Carbon::parse($leave->end_date)->format('d F Y'));
-        
-        // CATATAN CUTI (Sisa)
-        $templateProcessor->setValue('TAHUN_N', $currentYear);
-        $templateProcessor->setValue('SISA_N2', $leaveBalance['n2']['remaining'] ?? 0);
-        $templateProcessor->setValue('TAHUN_N2', $leaveBalance['n2']['year'] ?? '');
-        $templateProcessor->setValue('SISA_N1', $leaveBalance['n1']['remaining'] ?? 0);
-        $templateProcessor->setValue('TAHUN_N1', $leaveBalance['n1']['year'] ?? '');
-        $templateProcessor->setValue('SISA_N', $leaveBalance['n']['remaining'] ?? 0);
-        
-        // ALAMAT SELAMA CUTI
-        $templateProcessor->setValue('ALAMAT_CUTI', $leave->address ?? '-');
-        $templateProcessor->setValue('TELP', $leave->phone ?? $user->phone);
-        
-        // TANGGAL SURAT
-        $templateProcessor->setValue('TANGGAL_SURAT', Carbon::parse($leave->created_at)->translatedFormat('d F Y'));
-        $templateProcessor->setValue('KOTA', 'Ungaran');
-        
-        // Generate filename
-        $fileName = 'Surat_Cuti_' . str_replace(' ', '_', $user->name) . '_' . Carbon::parse($leave->start_date)->format('Y-m-d') . '.docx';
-        $fileName = preg_replace('/[^A-Za-z0-9_\-\.]/', '', $fileName);
-        
-        // Save to temp
-        $tempFile = storage_path('app/temp/' . $fileName);
-        
-        // Ensure temp directory exists
-        if (!file_exists(storage_path('app/temp'))) {
-            mkdir(storage_path('app/temp'), 0755, true);
-        }
-        
-        $templateProcessor->saveAs($tempFile);
-        
-        // Download and delete
-        return response()->download($tempFile, $fileName)->deleteFileAfterSend(true);
     }
 }

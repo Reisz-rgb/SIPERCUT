@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
+            'clean.output' => \App\Http\Middleware\CleanOutputBuffer::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

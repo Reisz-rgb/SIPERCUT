@@ -84,7 +84,10 @@ Route::middleware(['auth'])->prefix('user')->name('user.')->group(function () {
     Route::get('/riwayat', [UserController::class, 'history'])->name('riwayat');
 
     // Download Surat Cuti
-    Route::get('/cuti/{id}/download', [UserController::class, 'downloadSuratCuti'])->name('cuti.download');
+    Route::middleware(['auth', 'clean.output'])->group(function () {
+    Route::get('/download-surat-cuti/{id}', [UserController::class, 'downloadSuratCuti'])
+        ->name('user.download-surat-cuti');
+    });
 
     // Pengajuan Cuti
     Route::get('/pengajuan-cuti', [CutiController::class, 'create'])->name('cuti.create');
@@ -129,4 +132,53 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     
     // Route ini sebaiknya dihapus atau dikomentari agar tidak rancu dengan route dynamic di atas
     // Route::get('/detail-pengajuan', function() { return view('admin.detail_pengajuan'); })->name('detail_pengajuan');
+});
+
+// Di routes/web.php
+Route::get('/test-template', function() {
+    $templatePath = storage_path('app/template/surat_cuti_template.docx');
+    
+    if (!file_exists($templatePath)) {
+        return response()->json(['error' => 'Template tidak ditemukan'], 404);
+    }
+    
+    try {
+        $templateProcessor = new \PhpOffice\PhpWord\TemplateProcessor($templatePath);
+        
+        // Ambil semua variables di template
+        $variables = $templateProcessor->getVariables();
+        
+        // Test: Replace semua variables dengan nilai dummy
+        foreach ($variables as $var) {
+            $templateProcessor->setValue($var, 'TEST_' . $var);
+        }
+        
+        // Save test file
+        $testFile = storage_path('app/temp/test_output.docx');
+        $templateProcessor->saveAs($testFile);
+        
+        return response()->json([
+            'status' => 'success',
+            'template_size' => filesize($templatePath) . ' bytes',
+            'output_size' => filesize($testFile) . ' bytes',
+            'variables_found' => $variables,
+            'total_variables' => count($variables),
+            'test_file_created' => file_exists($testFile),
+            'download_test' => url('/download-test-file'),
+        ]);
+        
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ], 500);
+    }
+});
+
+Route::get('/download-test-file', function() {
+    $testFile = storage_path('app/temp/test_output.docx');
+    if (file_exists($testFile)) {
+        return response()->download($testFile, 'test_output.docx');
+    }
+    return 'File test tidak ditemukan';
 });

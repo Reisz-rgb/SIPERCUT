@@ -47,6 +47,7 @@
 
         @php($leaveData = [
             'id' => 'CUTI-' . now()->year . '-' . str_pad($leave->id, 4, '0', STR_PAD_LEFT),
+            'leaveId' => $leave->id,
             'status' => $statusKey === 'approved' ? 'Diterima' : ($statusKey === 'pending' ? 'Diproses' : 'Ditolak'),
             'jenis' => $leave->jenis_cuti,
             'mulai' => optional($leave->start_date)->format('Y-m-d'),
@@ -59,7 +60,8 @@
         ])
 
         <div class="h-card bg-white rounded-2xl border border-slate-100 shadow-sm hover:-translate-y-1 transition-transform p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-             data-status="{{ $statusKey }}">
+             data-status="{{ $statusKey }}"
+             data-leave-id="{{ $leave->id }}">
             <div class="flex items-center gap-4 min-w-0">
                 <div class="w-12 h-12 rounded-xl bg-{{ $statusUi['c'] }}-50 border border-{{ $statusUi['c'] }}-100 flex items-center justify-center flex-shrink-0">
                     <i class="bi {{ $statusUi['i'] }} text-{{ $statusUi['c'] }}-600 text-lg"></i>
@@ -312,7 +314,7 @@
                 statusAlert.textContent = "Pengajuan ini telah disetujui.";
                 btnDownloadSurat.style.display = 'inline-flex';
                 // Set URL download dengan ID dari activeData
-                const leaveId = activeBtn.closest('.h-card').getAttribute('data-leave-id');
+                const leaveId = activeData.leaveId || activeBtn.closest('.h-card').getAttribute('data-leave-id');
                 if(leaveId) {
                     btnDownloadSurat.href = `/user/cuti/${leaveId}/download`;
                 }
