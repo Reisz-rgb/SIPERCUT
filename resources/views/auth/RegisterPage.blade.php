@@ -4,278 +4,286 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daftar Akun Baru - SIIPUL</title>
-    
-    {{-- Font & Icons --}}
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
     <style>
         :root {
-            --primary: #991b1b; /* Merah Tua Header */
-            --input-bg: #e8e6e6; /* Abu-abu kolom input */
-            --text-main: #1f2937;
-            --text-muted: #6b7280;
+            --primary: #9E2A2B;
+            --primary-dark: #781F1F;
+            --bg-body: #F1F5F9;
+            --text-secondary: #64748B;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-        
-        body { 
-            background-color: #ffffff; 
-            color: var(--text-main); 
-            min-height: 100vh; 
-            display: flex; 
-            flex-direction: column; 
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-body);
+            color: #334155;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
 
-        /* --- HEADER SECTION (MERAH) --- */
-        .header-hero {
-            background-color: var(--primary);
-            color: white;
-            padding: 40px 20px;
-            text-align: center;
-            border-bottom-left-radius: 0; 
-            border-bottom-right-radius: 0;
+        /* Custom Scrollbar (konsisten) */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+        .auth-hero {
+            background: linear-gradient(135deg, var(--primary) 0%, #561616 100%);
+            min-height: 260px;
+            padding: 44px 20px;
+            color: #fff;
+            border-bottom-left-radius: 30px;
+            border-bottom-right-radius: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+        .auth-hero::before {
+            content: "";
+            position: absolute;
+            inset: -40px;
+            background:
+                radial-gradient(800px 260px at 20% 30%, rgba(255,255,255,0.18), transparent 60%),
+                radial-gradient(600px 240px at 80% 40%, rgba(255,255,255,0.12), transparent 55%);
+            pointer-events: none;
+        }
+
+        /* Brand*/
+        .landing-brand {
+            position: absolute;
+            top: 18px;
+            left: 32px;
+            z-index: 3;
             display: flex;
-            flex-direction: column;
             align-items: center;
-            justify-content: center;
+            gap: 10px;
         }
-
-        .logo-img {
-            height: 60px; /* Sesuaikan ukuran logo */
-            width: auto;
-            margin-bottom: 10px;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        .landing-brand img {
+            width: 30px;
+            height: 30px;
+            object-fit: contain;
+            flex: 0 0 auto;
         }
-
-        .app-title {
-            font-size: 20px;
+        .landing-brand .brand-title {
             font-weight: 800;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
-            text-transform: uppercase;
+            font-size: 1.05rem;
+            letter-spacing: -0.5px;
+            line-height: 1;
         }
-
-        .app-subtitle {
-            font-size: 14px;
-            font-weight: 400;
+        .landing-brand .brand-subtitle {
+            font-size: 0.68rem;
             opacity: 0.9;
-        }
-
-        /* --- FORM CONTAINER --- */
-        .register-container {
-            width: 100%;
-            max-width: 480px;
-            margin: 0 auto;
-            padding: 40px 25px;
-            flex: 1; /* Agar footer copyright turun ke bawah */
-        }
-
-        .page-heading {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .page-heading h2 {
-            font-size: 22px;
             font-weight: 700;
-            color: #111;
-            margin-bottom: 8px;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            line-height: 1.1;
         }
 
-        .page-heading p {
-            font-size: 14px;
-            color: var(--text-muted);
+        .auth-shell {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 0 16px 40px 16px;
+            margin-top: -90px;
+            position: relative;
+            z-index: 2;
         }
 
-        /* --- FORM ELEMENTS --- */
-        .form-group {
-            margin-bottom: 20px;
+        .auth-card {
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid #F1F5F9;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
         }
+
+        .auth-card-header {
+            padding: 22px 22px 18px 22px;
+            border-bottom: 1px dashed #E2E8F0;
+        }
+
+        .auth-card-body { padding: 22px; }
 
         .form-label {
-            display: block;
-            font-size: 14px;
             font-weight: 600;
-            color: #374151;
-            margin-bottom: 8px;
+            font-size: 0.85rem;
+            color: #334155;
         }
 
-        /* Style Input Abu-abu seperti gambar */
-        .form-input {
-            width: 100%;
-            background-color: var(--input-bg);
-            border: 1px solid transparent; /* Tidak ada border default */
-            border-radius: 8px;
-            padding: 14px 16px;
-            font-size: 14px;
-            color: #333;
-            outline: none;
-            transition: all 0.2s;
+        .form-control {
+            border-radius: 12px;
+            border: 1px solid #E2E8F0;
+            background-color: #F8FAFC;
+            padding: 12px 14px;
         }
 
-        .form-input::placeholder {
-            color: #a3a3a3;
-            font-weight: 400;
-        }
-
-        .form-input:focus {
+        .form-control:focus {
+            border-color: rgba(158, 42, 43, 0.55);
+            box-shadow: 0 0 0 4px rgba(158, 42, 43, 0.10);
             background-color: #fff;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(153, 27, 27, 0.1);
         }
 
-        /* --- BUTTONS --- */
-        .btn-submit {
-            width: 100%;
-            background-color: var(--primary);
-            color: white;
+        .btn-primary-gradient {
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
             border: none;
-            padding: 14px;
-            border-radius: 8px;
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 10px;
-            margin-bottom: 25px;
-            transition: background 0.2s;
+            border-radius: 12px;
+            padding: 12px 14px;
+            font-weight: 700;
+            box-shadow: 0 10px 20px rgba(158, 42, 43, 0.18);
+        }
+        .btn-primary-gradient:hover {
+            filter: brightness(0.98);
+            box-shadow: 0 12px 22px rgba(158, 42, 43, 0.22);
         }
 
-        .btn-submit:hover {
-            background-color: #7f1d1d;
-        }
-
-        /* --- LINKS --- */
-        .auth-links {
-            text-align: center;
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-bottom: 40px;
-        }
-
-        .link-red {
-            color: var(--primary);
-            font-weight: 600;
+        .link-soft {
+            color: var(--text-secondary);
             text-decoration: none;
-            cursor: pointer;
+            font-weight: 700;
         }
-        .link-red:hover { text-decoration: underline; }
+        .link-soft:hover { color: var(--primary); }
 
-        .back-link {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            color: var(--text-muted);
-            font-size: 14px;
-            text-decoration: none;
-            margin-top: 10px;
-            transition: color 0.2s;
-        }
-        .back-link:hover { color: #111; }
-
-        /* --- FOOTER COPYRIGHT --- */
-        .footer-copy {
-            text-align: center;
-            font-size: 12px;
-            color: #9ca3af;
-            padding: 20px;
-            margin-top: auto;
+        .alert-mini {
+            font-size: 0.9rem;
+            background-color: #FEF2F2;
+            border: 1px solid #FECACA;
+            color: #991B1B;
+            border-radius: 12px;
+            padding: 12px 14px;
         }
 
-        /* Responsive adjustments */
         @media (max-width: 480px) {
-            .register-container { padding: 30px 20px; }
-            .header-hero { padding: 30px 20px; }
+            .auth-hero { border-radius: 0; min-height: 220px; }
+            .auth-shell { margin-top: -70px; }
+            .landing-brand { top: 14px; left: 18px; }
         }
     </style>
 </head>
+
 <body>
-
-    <div class="header-hero">
-        {{-- Ganti dengan path logo Anda --}}
-        <img src="{{ asset('logokabupatensemarang.png') }}" alt="Logo" class="logo-img">
-        
-        <h1 class="app-title">SIIPUL</h1>
-        <p class="app-subtitle">Sistem Informasi Cuti (SIIPUL)</p>
-    </div>
-
-    <div class="register-container">
-        
-        <div class="page-heading">
-            <h2>Daftar Akun Baru</h2>
-            <p>Lengkapi data diri Anda untuk mendaftar</p>
+    <header class="auth-hero">
+        <div class="landing-brand">
+            <img src="{{ asset('logokabupatensemarang.png') }}" alt="Logo Kab Semarang">
+            <div>
+                <div class="brand-title">SIIPUL</div>
+                <div class="brand-subtitle">DISDIKBUDPORA KAB. SEMARANG</div>
+            </div>
         </div>
-        
-        {{-- Error Messages --}}
-        @if ($errors->any())
-            <div style="background-color: #fee2e2; border: 1px solid #fca5a5; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-                @foreach ($errors->all() as $error)
-                    <p style="color: #991b1b; font-size: 14px; margin-bottom: 4px;">{{ $error }}</p>
-                @endforeach
-            </div>
-        @endif
+    </header>
 
-        <div class="page-heading">
-    <h2>Daftar Akun Baru</h2>
-    <p>Lengkapi data diri Anda untuk mendaftar</p>
-    
-    {{-- Info box --}}
-    <div style="background-color: #e7f1ff; border: 1px solid #b3d7ff; border-radius: 8px; padding: 12px; margin-top: 15px; text-align: left;">
-            <p style="margin: 0; font-size: 13px; color: #0c5460; line-height: 1.5;">
-                <strong>Penting:</strong><br>
-                1. Masukkan <strong>Nama</strong> dan <strong>NIP</strong> sesuai data pegawai yang terdaftar<br>
-                2. Jika pertama kali login, gunakan <strong>NIP sebagai password</strong><br>
-                3. Gunakan form ini untuk <strong>mengubah password</strong> dan <strong>mendaftarkan nomor HP</strong> Anda
-            </p>
+    <main class="auth-shell">
+        <div class="auth-card">
+            <div class="auth-card-header">
+                <div class="text-center">
+                    <h1 class="m-0" style="font-size: 1.35rem; font-weight: 800;">Daftar Akun Baru</h1>
+                    <p class="m-0 mt-1" style="color: var(--text-secondary); font-size: 0.92rem;">Lengkapi data diri Anda untuk mendaftar</p>
+                </div>
+            </div>
+
+            <div class="auth-card-body">
+                @if ($errors->any())
+                    <div class="alert-mini mb-4">
+                        <div class="d-flex gap-2 align-items-start">
+                            <i class="bi bi-exclamation-triangle-fill" style="margin-top: 2px;"></i>
+                            <div>
+                                @foreach ($errors->all() as $error)
+                                    <div>{{ $error }}</div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                <div class="alert border-0 rounded-4 p-3 mb-4" style="background: #E7F1FF; color: #0C5460; border: 1px solid #B3D7FF;">
+                    <div class="d-flex gap-2">
+                        <i class="bi bi-info-circle-fill" style="margin-top: 2px;"></i>
+                        <div style="font-size: 0.88rem; line-height: 1.55;">
+                            <div style="font-weight: 800;">Penting:</div>
+                            <div>1. Masukkan <strong>Nama</strong> dan <strong>NIP</strong> sesuai data pegawai yang terdaftar.</div>
+                            <div>2. Jika pertama kali login, gunakan <strong>NIP sebagai password</strong>.</div>
+                            <div>3. Gunakan form ini untuk <strong>mengubah password</strong> dan <strong>mendaftarkan nomor HP</strong> Anda.</div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- DILARANG ubah name/action/logic. Hanya styling. --}}
+                <form action="{{ route('register') }}" method="POST">
+                    @csrf
+
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Nama Lengkap</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white" style="border-radius: 12px 0 0 12px; border: 1px solid #E2E8F0; border-right: none;">
+                                    <i class="bi bi-person"></i>
+                                </span>
+                                <input type="text" name="name" class="form-control" placeholder="Nama lengkap sesuai SK" value="{{ old('name') }}" required style="border-left: none; border-radius: 0 12px 12px 0;">
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">NIP</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white" style="border-radius: 12px 0 0 12px; border: 1px solid #E2E8F0; border-right: none;">
+                                    <i class="bi bi-person-badge"></i>
+                                </span>
+                                <input type="text" name="nip" class="form-control" placeholder="19xxxxxxxxxxx" value="{{ old('nip') }}" required style="border-left: none; border-radius: 0 12px 12px 0;">
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Nomor HP / WhatsApp</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white" style="border-radius: 12px 0 0 12px; border: 1px solid #E2E8F0; border-right: none;">
+                                    <i class="bi bi-telephone"></i>
+                                </span>
+                                <input type="text" name="phone" class="form-control" placeholder="0812xxxx" value="{{ old('phone') }}" required style="border-left: none; border-radius: 0 12px 12px 0;">
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white" style="border-radius: 12px 0 0 12px; border: 1px solid #E2E8F0; border-right: none;">
+                                    <i class="bi bi-shield-lock"></i>
+                                </span>
+                                <input type="password" name="password" class="form-control" placeholder="••••••••" required style="border-left: none; border-radius: 0 12px 12px 0;">
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Konfirmasi Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white" style="border-radius: 12px 0 0 12px; border: 1px solid #E2E8F0; border-right: none;">
+                                    <i class="bi bi-shield-check"></i>
+                                </span>
+                                <input type="password" name="password_confirmation" class="form-control" placeholder="••••••••" required style="border-left: none; border-radius: 0 12px 12px 0;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary-gradient text-white w-100 mt-4">
+                        Daftar
+                    </button>
+
+                    <div class="text-center mt-4">
+                        <span style="font-size: 0.9rem; color: var(--text-secondary);">Sudah punya akun?</span>
+                        <a href="{{ route('login') }}" class="text-decoration-none" style="color: var(--primary); font-weight: 800;">Masuk</a>
+                    </div>
+
+                    <div class="text-center mt-4" style="font-size: 0.78rem; color: #94A3B8;">
+                        &copy; 2026 Disdikbudpora Kabupaten Semarang
+                        <div class="mt-2">
+                            <a href="{{ url('/') }}" class="text-decoration-none" style="color: #94A3B8; font-weight: 600;">Kembali ke Halaman Utama</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
-    </div>
+    </main>
 
-        <form action="{{ route('register') }}" method="POST">
-            @csrf
-
-            <div class="form-group">
-                <label class="form-label">Nama Lengkap</label>
-                <input type="text" name="name" class="form-input" placeholder="Nama lengkap sesuai SK" value="{{ old('name') }}" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">NIP</label>
-                <input type="text" name="nip" class="form-input" placeholder="19xxxxxxxxxxx" value="{{ old('nip') }}" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Nomor HP / WhatsApp</label>
-                <input type="text" name="phone" class="form-input" placeholder="0812xxxx" value="{{ old('phone') }}" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Password</label>
-                <input type="password" name="password" class="form-input" placeholder="••••••••" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Konfirmasi Password</label>
-                <input type="password" name="password_confirmation" class="form-input" placeholder="••••••••" required>
-            </div>
-
-            <button type="submit" class="btn-submit">Daftar</button>
-
-            <div class="auth-links">
-                Sudah punya akun? <a href="{{ route('login') }}" class="link-red">Masuk</a>
-            </div>
-
-            <a href="{{ url('/') }}" class="back-link">
-                <i class="fa-solid fa-arrow-left"></i> Kembali ke Halaman Utama
-            </a>
-
-        </form>
-
-    </div>
-
-    <div class="footer-copy">
-        &copy; 2026 &nbsp; Disdikbudpora Kabupaten Semarang
-    </div>
-
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
