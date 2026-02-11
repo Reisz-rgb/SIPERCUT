@@ -99,41 +99,15 @@ class AuthController extends Controller
         $nip = preg_replace('/[^0-9]/', '', $request->nip);
         $phone = preg_replace('/[^0-9]/', '', $request->phone);
 
-        // Cek apakah NIP ada di database pegawai
-        $existingUser = User::where('nip', $nip)->first();
-
-        if (!$existingUser) {
-            return redirect()->back()
-                ->withErrors(['nip' => 'NIP tidak ditemukan dalam database pegawai. Silakan hubungi admin.'])
-                ->withInput();
-        }
-
-        // Cek apakah nama sesuai dengan data di database
-        if (strtolower(trim($existingUser->name)) !== strtolower(trim($request->name))) {
-            return redirect()->back()
-                ->withErrors(['name' => 'Nama tidak sesuai dengan data pegawai. Nama yang terdaftar: ' . $existingUser->name])
-                ->withInput();
-        }
-
-        // Cek apakah phone sudah dipakai user lain
-        $phoneExists = User::where('phone', $phone)
-            ->where('id', '!=', $existingUser->id)
-            ->exists();
-
-        if ($phoneExists) {
-            return redirect()->back()
-                ->withErrors(['phone' => 'Nomor HP sudah digunakan oleh pegawai lain.'])
-                ->withInput();
-        }
-
-        // Update user dengan password dan phone baru
-        $existingUser->update([
-            'phone' => $phone,
-            'password' => Hash::make($request->password),
-        ]);
 
         // Auto login setelah register
-        Auth::login($existingUser);
+        Auth::login(User::create([
+            'name' => $request->name,
+            'nip' => $nip,
+            'phone' => $phone,
+            'password' => Hash::make($request->password),
+            'role' => 'user',
+        ]));
 
         return redirect()->route('register.success');
     }
