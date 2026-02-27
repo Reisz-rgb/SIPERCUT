@@ -109,6 +109,8 @@ class AuthController extends Controller
             'role' => 'user',
         ]));
 
+        $request->session()->regenerate();
+
         return redirect()->route('register.success');
     }
 

@@ -38,9 +38,6 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
     Route::post('/register', [AuthController::class, 'register'])->name('register.process');
 
-    Route::get('/register-success', fn() => view('auth.RegisterSuccess'))
-        ->name('register.success');
-
     // Password Reset
     Route::get('/lupa-password', [PasswordResetController::class, 'showForgotPassword'])
         ->name('password.request');
@@ -58,6 +55,10 @@ Route::middleware('guest')->group(function () {
     Route::get('/panduan-login', fn() => view('auth.PanduanLogin'))->name('panduan.login');    
 });
 
+Route::get('/register-success', fn() => view('auth.RegisterSuccess'))
+    ->middleware('auth')
+    ->name('register.success');
+    
 // Logout (authenticated only)
 Route::post('/logout', [AuthController::class, 'logout'])
     ->name('logout')
@@ -134,7 +135,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Route::get('/detail-pengajuan', function() { return view('admin.detail_pengajuan'); })->name('detail_pengajuan');
 });
 
-// Di routes/web.php
 Route::get('/test-template', function() {
     $templatePath = storage_path('app/template/surat_cuti_template.docx');
     

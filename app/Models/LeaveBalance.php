@@ -38,6 +38,15 @@ class LeaveBalance extends Model
      */
     public static function calculateTotalAvailable($userId, $currentYear)
     {
+        if (!$userId) {
+        return (object)['quota' => 12, 'used' => 0, 'remaining' => 12];
+        }
+        
+        return self::firstOrCreate(
+            ['user_id' => $userId, 'year' => $year],
+            ['quota' => 12, 'used' => 0, 'remaining' => 12]
+        );
+
         $n2 = self::getOrCreateBalance($userId, $currentYear - 2);
         $n1 = self::getOrCreateBalance($userId, $currentYear - 1);
         $n = self::getOrCreateBalance($userId, $currentYear);

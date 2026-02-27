@@ -20,13 +20,25 @@ class UserController extends Controller
     public function dashboard()
     {
         $user = Auth::user();
+
+        if (!$user) {
+        return redirect()->route('login');
+        }
+
         $currentYear = now()->year;
-        
-        // Hitung saldo cuti dengan LeaveBalance
+
+        // Wrap dalam try-catch agar error balance tidak crash halaman
+        try {
         $leaveBalance = LeaveBalance::calculateTotalAvailable($user->id, $currentYear);
         $totalQuota = $leaveBalance['n']['quota'];
         $usedLeave = $leaveBalance['n']['used'];
         $remainingLeave = $leaveBalance['total_available'];
+        } catch (\Throwable $e) {  // ← ganti \Exception jadi \Throwable
+            \Log::error('LeaveBalance error: ' . $e->getMessage());
+            $totalQuota = 12;
+            $usedLeave = 0;
+            $remainingLeave = 12;
+        }
         
         // Ambil riwayat pengajuan terbaru (3 terakhir) dari LeaveRequest
         $recentLeaves = LeaveRequest::where('user_id', $user->id)

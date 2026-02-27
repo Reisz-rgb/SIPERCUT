@@ -45,8 +45,8 @@
             </ul>
 
             <div class="absolute bottom-8 right-8">
-                <a href="{{ url('/login') }}" class="bg-[#9E2A2B] text-white px-6 py-2 rounded shadow hover:bg-red-800 transition text-sm font-semibold">
-                    Login Sekarang
+                <a href="{{ url('/user/dashboard') }}" class="bg-[#9E2A2B] text-white px-6 py-2 rounded shadow hover:bg-red-800 transition text-sm font-semibold">
+                    Masuk ke Dashboard
                 </a>
             </div>
         </div>
