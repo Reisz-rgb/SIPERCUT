@@ -211,7 +211,7 @@
 
                 <div class="flex gap-2">
                     {{-- Tombol Download Surat (Hanya untuk approved) --}}
-                    <a href="{{ route('user.cuti.download', $leave->id) }}" id="btnDownloadSurat" class="hidden sm:inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-extrabold text-white bg-green-600 hover:bg-green-700 transition-all">
+                    <a href="#" id="btnDownloadSurat" class="hidden sm:inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-extrabold text-white bg-green-600 hover:bg-green-700 transition-all">
                         <i class="bi bi-download"></i>
                         Download Surat
                     </a>
