@@ -212,7 +212,7 @@ class UserController extends Controller
         return view('user.RiwayatPage', compact('leaves', 'user', 'status'));
     }
     
-    public function downloadSuratCuti($id)
+   public function downloadSuratCuti($id)
     {
         // Bersihkan output buffer
         while (ob_get_level()) {

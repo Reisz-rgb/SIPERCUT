@@ -86,8 +86,8 @@ Route::middleware(['auth'])->prefix('user')->name('user.')->group(function () {
 
     // Download Surat Cuti
     Route::middleware(['auth', 'clean.output'])->group(function () {
-    Route::get('/download-surat-cuti/{id}', [UserController::class, 'downloadSuratCuti'])
-        ->name('user.download-surat-cuti');
+    Route::get('/cuti/{id}/download', [UserController::class, 'downloadSuratCuti'])
+        ->name('cuti.download');
     });
 
     // Pengajuan Cuti
