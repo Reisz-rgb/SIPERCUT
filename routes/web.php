@@ -7,7 +7,7 @@ use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CutiController;
-    
+
 /*
 |--------------------------------------------------------------------------
 | PUBLIC AREA
@@ -43,72 +43,79 @@ Route::middleware('guest')->group(function () {
         ->name('password.request');
     Route::post('/lupa-password', [PasswordResetController::class, 'sendResetLink'])
         ->name('password.email');
-    
+
     Route::get('/link-reset-terkirim', fn() => view('auth.kirimlink'))
         ->name('password.sent');
-    
+
     Route::get('/reset-password/{token}', [PasswordResetController::class, 'showResetForm'])
         ->name('password.reset');
     Route::post('/reset-password', [PasswordResetController::class, 'reset'])
         ->name('password.update');
 
-    Route::get('/panduan-login', fn() => view('auth.PanduanLogin'))->name('panduan.login');    
+    Route::get('/panduan-login', fn() => view('auth.PanduanLogin'))->name('panduan.login');
 });
 
 Route::get('/register-success', fn() => view('auth.RegisterSuccess'))
     ->middleware('auth')
     ->name('register.success');
-    
+
 // Logout (authenticated only)
 Route::post('/logout', [AuthController::class, 'logout'])
     ->name('logout')
     ->middleware('auth');
+
+
 /*
 |--------------------------------------------------------------------------
+
 | USER AREA - Authenticated Users Only
 |--------------------------------------------------------------------------
 */
+
 Route::middleware(['auth'])->prefix('user')->name('user.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
-    
+
     // Profil
     Route::get('/profil', [UserController::class, 'profile'])->name('profil');
     Route::get('/edit-profil', [UserController::class, 'editProfile'])->name('profil.edit');
     Route::post('/edit-profil', [UserController::class, 'updateProfile'])->name('profil.update');
-    
+
     // Change Password
     Route::get('/ubah-password', [UserController::class, 'showChangePassword'])->name('password.change');
-    Route::post('/ubah-password', [UserController::class, 'updatePassword'])->name('password.update.user'); // ← UBAH INI
-    
+    Route::post('/ubah-password', [UserController::class, 'updatePassword'])->name('password.update.user');
+
     // Riwayat
     Route::get('/riwayat', [UserController::class, 'history'])->name('riwayat');
 
     // Download Surat Cuti
     Route::middleware(['auth', 'clean.output'])->group(function () {
-    Route::get('/cuti/{id}/download', [UserController::class, 'downloadSuratCuti'])
-        ->name('cuti.download');
+        Route::get('/cuti/{id}/download', [UserController::class, 'downloadSuratCuti'])
+            ->name('cuti.download');
     });
 
     // Pengajuan Cuti
     Route::get('/pengajuan-cuti', [CutiController::class, 'create'])->name('cuti.create');
     Route::post('/pengajuan-cuti', [CutiController::class, 'store'])->name('cuti.store');
 });
+
+
 /*
 |--------------------------------------------------------------------------
-| Web Routes
+
+| ADMIN AREA
 |--------------------------------------------------------------------------
 */
+
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
-    
+
     // 1. DASHBOARD & PROFIL
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
-    Route::get('/profil', function() {
+    Route::get('/profil', function () {
         return view('admin.profil_admin');
     })->name('profil');
-    
+
     // 2. KELOLA PENGAJUAN CUTI (Detail & Update Status)
-    // PERBAIKAN DI SINI: Ubah CutiController menjadi AdminController
     Route::get('/pengajuan/{id}', [AdminController::class, 'show'])->name('pengajuan.show');
     Route::put('/pengajuan/{id}', [AdminController::class, 'updateStatus'])->name('pengajuan.update');
 
@@ -116,7 +123,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/download-excel', [AdminController::class, 'downloadExcel'])->name('download.excel');
     Route::get('/download-pdf', [AdminController::class, 'downloadPdf'])->name('download.pdf');
 
-    // 4. KELOLA PEGAWAI (Aman, Tetap Ada)
+    // 4. KELOLA PEGAWAI
     Route::get('/kelola-pegawai', [PegawaiController::class, 'index'])->name('kelola_pegawai');
     Route::get('/tambah-pegawai', [PegawaiController::class, 'create'])->name('tambah_pegawai');
     Route::post('/pegawai/store', [PegawaiController::class, 'store'])->name('pegawai.store');
@@ -124,39 +131,41 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::put('/pegawai/{id}', [PegawaiController::class, 'update'])->name('pegawai.update');
     Route::delete('/pegawai/{id}', [PegawaiController::class, 'destroy'])->name('pegawai.destroy');
     Route::post('/pegawai/{id}/reset-password', [PegawaiController::class, 'resetPassword'])->name('pegawai.reset_password');
-    
-    // 5. KELOLA PENGAJUAN 
+
+    // 5. KELOLA PENGAJUAN
     Route::get('/kelola-pengajuan', [AdminController::class, 'kelolaPengajuan'])->name('kelola_pengajuan');
-    
-    // 6. VIEW LAINNYA
-    Route::get('/laporan', [AdminController::class, 'laporan'])->name('laporan'); 
-    
-    // Route ini sebaiknya dihapus atau dikomentari agar tidak rancu dengan route dynamic di atas
-    // Route::get('/detail-pengajuan', function() { return view('admin.detail_pengajuan'); })->name('detail_pengajuan');
+
+    // 6. LAPORAN
+    Route::get('/laporan', [AdminController::class, 'laporan'])->name('laporan');
 });
 
-Route::get('/test-template', function() {
+
+/*
+|--------------------------------------------------------------------------
+
+| TEST TEMPLATE (OPTIONAL)
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/test-template', function () {
     $templatePath = storage_path('app/template/surat_cuti_template.docx');
-    
+
     if (!file_exists($templatePath)) {
         return response()->json(['error' => 'Template tidak ditemukan'], 404);
     }
-    
+
     try {
         $templateProcessor = new \PhpOffice\PhpWord\TemplateProcessor($templatePath);
-        
-        // Ambil semua variables di template
+
         $variables = $templateProcessor->getVariables();
-        
-        // Test: Replace semua variables dengan nilai dummy
+
         foreach ($variables as $var) {
             $templateProcessor->setValue($var, 'TEST_' . $var);
         }
-        
-        // Save test file
+
         $testFile = storage_path('app/temp/test_output.docx');
         $templateProcessor->saveAs($testFile);
-        
+
         return response()->json([
             'status' => 'success',
             'template_size' => filesize($templatePath) . ' bytes',
@@ -166,7 +175,6 @@ Route::get('/test-template', function() {
             'test_file_created' => file_exists($testFile),
             'download_test' => url('/download-test-file'),
         ]);
-        
     } catch (\Exception $e) {
         return response()->json([
             'error' => $e->getMessage(),
@@ -175,7 +183,7 @@ Route::get('/test-template', function() {
     }
 });
 
-Route::get('/download-test-file', function() {
+Route::get('/download-test-file', function () {
     $testFile = storage_path('app/temp/test_output.docx');
     if (file_exists($testFile)) {
         return response()->download($testFile, 'test_output.docx');

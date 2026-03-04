@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\LeaveRequest;
+use App\Models\LeaveBalance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 // Export
@@ -22,10 +24,7 @@ class AdminController extends Controller
 
     public function downloadExcel(Request $request)
     {
-        return Excel::download(
-            new LaporanExport($request),
-            'laporan_cuti.xlsx'
-        );
+        return Excel::download(new LaporanExport($request), 'laporan_cuti.xlsx');
     }
 
     public function downloadPdf(Request $request)
@@ -34,10 +33,10 @@ class AdminController extends Controller
 
         $filter = $request->input('filter', '1_bulan');
 
-        if ($filter == '1_bulan') {
+        if ($filter === '1_bulan') {
             $startDate = Carbon::now()->subMonth();
             $titlePeriode = "1 Bulan Terakhir";
-        } elseif ($filter == '3_bulan') {
+        } elseif ($filter === '3_bulan') {
             $startDate = Carbon::now()->subMonths(3);
             $titlePeriode = "3 Bulan Terakhir";
         } else {
@@ -49,14 +48,14 @@ class AdminController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('user', function($q) use ($search) {
+            $query->whereHas('user', function ($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%");
             });
         }
-        
+
         if ($request->filled('bidang_unit')) {
             $bidang = $request->bidang_unit;
-            $query->whereHas('user', function($q) use ($bidang) {
+            $query->whereHas('user', function ($q) use ($bidang) {
                 $q->where('bidang_unit', $bidang);
             });
         }
@@ -68,7 +67,7 @@ class AdminController extends Controller
     }
 
     /* =====================================================
-     * 2. DASHBOARD ADMIN (SAFE + OPTIMIZED)
+     * 2. DASHBOARD ADMIN
      * ===================================================== */
 
     public function dashboard()
@@ -76,10 +75,6 @@ class AdminController extends Controller
         $totalPegawai = User::where('role', 'user')->count();
         $listPegawai  = User::where('role', 'user')->orderBy('name')->get();
 
-        /**
-         * SAFETY NET
-         * Kalau migration belum dijalankan
-         */
         if (!Schema::hasTable('leave_requests')) {
             return view('admin.dashboard_admin', [
                 'totalPengajuan' => 0,
@@ -97,44 +92,32 @@ class AdminController extends Controller
             ]);
         }
 
-        /* =====================
-         * A. STATISTIK KARTU
-         * ===================== */
         $stats = LeaveRequest::selectRaw("
                 COUNT(*) as total,
-                SUM(status = 'approved') as approved,
-                SUM(status = 'pending') as pending,
-                SUM(status = 'rejected') as rejected
+                SUM(status = 'approved' OR status = 'disetujui') as approved,
+                SUM(status = 'pending' OR status = 'diproses' OR status = 'tertunda') as pending,
+                SUM(status = 'rejected' OR status = 'ditolak') as rejected
             ")->first();
 
-        /* =====================
-         * B. PENDING TERBARU
-         * ===================== */
         $pendingRequests = LeaveRequest::with('user')
-            ->where('status', 'pending')
+            ->whereIn('status', ['pending', 'diproses', 'tertunda'])
             ->latest()
             ->limit(5)
             ->get();
 
-        /* =====================
-         * C. AKTIVITAS TERAKHIR
-         * ===================== */
         $recentActivities = LeaveRequest::with('user')
             ->latest('updated_at')
             ->limit(3)
             ->get();
 
-        /* =====================
-         * D. GRAFIK 6 BULAN (1 QUERY)
-         * ===================== */
         $start = Carbon::now()->subMonths(5)->startOfMonth();
 
         $chartRaw = LeaveRequest::selectRaw("
                 YEAR(start_date) as year,
                 MONTH(start_date) as month,
-                SUM(status = 'approved') as approved,
-                SUM(status = 'rejected') as rejected,
-                SUM(status = 'pending') as pending
+                SUM(status = 'approved' OR status = 'disetujui') as approved,
+                SUM(status = 'rejected' OR status = 'ditolak') as rejected,
+                SUM(status = 'pending' OR status = 'diproses' OR status = 'tertunda') as pending
             ")
             ->where('start_date', '>=', $start)
             ->groupBy('year', 'month')
@@ -160,10 +143,10 @@ class AdminController extends Controller
         }
 
         return view('admin.dashboard_admin', [
-            'totalPengajuan' => $stats->total,
-            'disetujui' => $stats->approved,
-            'menunggu' => $stats->pending,
-            'ditolak' => $stats->rejected,
+            'totalPengajuan' => (int) ($stats->total ?? 0),
+            'disetujui' => (int) ($stats->approved ?? 0),
+            'menunggu' => (int) ($stats->pending ?? 0),
+            'ditolak' => (int) ($stats->rejected ?? 0),
             'totalPegawai' => $totalPegawai,
             'pendingRequests' => $pendingRequests,
             'recentActivities' => $recentActivities,
@@ -185,70 +168,105 @@ class AdminController extends Controller
         return view('admin.detail_pengajuan', compact('pengajuan'));
     }
 
-    // INI YANG SUDAH DIPERBAIKI (MENGGUNAKAN 'status', BUKAN 'keputusan')
+    /**
+     * PENTING:
+     * Setelah status diubah, kita SYNC saldo dari riwayat approved,
+     * jadi DITOLAK tidak akan ikut terhitung.
+     */
     public function updateStatus($id, Request $request)
     {
         $validated = $request->validate([
-            'status' => 'required|in:approved,pending,rejected',
-            'rejection_reason' => 'nullable|string'
+            'status' => 'required|in:approved,pending,rejected,disetujui,diproses,ditolak,tertunda',
+            'rejection_reason' => 'nullable|string',
         ]);
 
         $pengajuan = LeaveRequest::findOrFail($id);
 
-        $pengajuan->status = $validated['status'];
-        $pengajuan->rejection_reason =
-            $validated['status'] === 'rejected'
-                ? $validated['rejection_reason']
-                : null;
+        $oldStatus = (string) $pengajuan->status;
+        $newStatus = (string) $validated['status'];
 
-        $pengajuan->save();
+        try {
+            DB::transaction(function () use ($pengajuan, $oldStatus, $newStatus, $validated) {
 
-        return back()->with('success', 'Keputusan berhasil disimpan!');
+                $pengajuan->status = $newStatus;
+                $pengajuan->rejection_reason = in_array($newStatus, ['rejected', 'ditolak'], true)
+                    ? ($validated['rejection_reason'] ?? null)
+                    : null;
+                $pengajuan->save();
+
+                // Tahun hitung saldo berdasarkan start_date
+                $year = $this->getLeaveYear($pengajuan);
+
+                // Setelah apapun perubahan status => sync ulang dari approved (fix utama)
+                LeaveBalance::syncYearFromRequests((int) $pengajuan->user_id, (int) $year);
+            });
+
+            return back()->with('success', 'Keputusan berhasil disimpan!');
+        } catch (\Throwable $e) {
+            Log::error('Gagal update status cuti', [
+                'leave_request_id' => $pengajuan->id ?? null,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Gagal menyimpan keputusan: ' . $e->getMessage());
+        }
     }
+
+    private function getLeaveYear(LeaveRequest $leaveRequest): int
+    {
+        try {
+            if (!empty($leaveRequest->start_date)) {
+                return Carbon::parse($leaveRequest->start_date)->year;
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+        return (int) now()->year;
+    }
+
+    /* =====================================================
+     * 4. KELOLA PENGAJUAN
+     * ===================================================== */
 
     public function kelolaPengajuan(Request $request)
     {
-        // 1. Siapkan Query
         $query = LeaveRequest::with('user');
 
-        // 2. Logika Pencarian (Nama atau NIP)
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('user', function($q) use ($search) {
+            $query->whereHas('user', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('nip', 'like', "%{$search}%");
+                    ->orWhere('nip', 'like', "%{$search}%");
             });
         }
 
-        // 3. Logika Filter Status
         if ($request->filled('status') && $request->status !== 'Semua') {
             $query->where('status', $request->status);
         }
 
-        // 4. Ambil data dengan Pagination (10 data per halaman)
-        $pengajuan = $query->latest()->paginate(10); 
+        $pengajuan = $query->latest()->paginate(10);
 
         return view('admin.kelola_pengajuan', compact('pengajuan'));
     }
 
     /* =====================================================
-     * 4. HALAMAN LAPORAN & ANALYTICS (FIXED: bidang_unit)
+     * 5. LAPORAN & ANALYTICS
      * ===================================================== */
+
     public function laporan(Request $request)
     {
         $listBidang = User::whereNotNull('bidang_unit')
-                        ->where('bidang_unit', '!=', '') // Pastikan tidak kosong
-                        ->distinct()
-                        ->pluck('bidang_unit');
+            ->where('bidang_unit', '!=', '')
+            ->distinct()
+            ->pluck('bidang_unit');
 
-        // 1. Filter Rentang Waktu
-        $filter = $request->input('filter', '1_bulan'); // Default 1 bulan
+        $filter = $request->input('filter', '1_bulan');
         $query = LeaveRequest::query();
 
-        if ($filter == '1_bulan') {
+        if ($filter === '1_bulan') {
             $startDate = Carbon::now()->subMonth();
             $labelWaktu = "1 Bulan Terakhir";
-        } elseif ($filter == '3_bulan') {
+        } elseif ($filter === '3_bulan') {
             $startDate = Carbon::now()->subMonths(3);
             $labelWaktu = "3 Bulan Terakhir";
         } else {
@@ -256,83 +274,80 @@ class AdminController extends Controller
             $labelWaktu = "Tahun Ini (" . date('Y') . ")";
         }
 
-        // Terapkan filter tanggal ke query dasar
         $query->where('created_at', '>=', $startDate);
 
-        
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('user', function($q) use ($search) {
+            $query->whereHas('user', function ($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%");
             });
         }
 
         if ($request->filled('bidang_unit')) {
             $bidang = $request->bidang_unit;
-            $query->whereHas('user', function($q) use ($bidang) {
+            $query->whereHas('user', function ($q) use ($bidang) {
                 $q->where('bidang_unit', $bidang);
             });
         }
-        // --------------------------------------
 
-        // 2. Hitung Statistik Card (Top) - Berdasarkan data yang SUDAH difilter
-        $total = $query->count();
-        
-        $approved = (clone $query)->where('status', 'approved')->count();
-        $rejected = (clone $query)->where('status', 'rejected')->count();
-        $pending  = (clone $query)->where('status', 'pending')->count();
+        $total = (clone $query)->count();
+        $approved = (clone $query)->whereIn('status', ['approved', 'disetujui'])->count();
+        $rejected = (clone $query)->whereIn('status', ['rejected', 'ditolak'])->count();
+        $pending  = (clone $query)->whereIn('status', ['pending', 'diproses', 'tertunda'])->count();
 
-        // Persentase (cegah error division by zero)
         $persenApproved = $total > 0 ? round(($approved / $total) * 100, 1) : 0;
         $persenRejected = $total > 0 ? round(($rejected / $total) * 100, 1) : 0;
         $persenPending  = $total > 0 ? round(($pending / $total) * 100, 1) : 0;
 
-        // Rata-rata Proses
         $avgSeconds = (clone $query)
-            ->whereIn('status', ['approved', 'rejected'])
+            ->whereIn('status', ['approved', 'rejected', 'disetujui', 'ditolak'])
             ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, created_at, updated_at)) as avg_time')
             ->value('avg_time');
-        
-        $avgDays = $avgSeconds ? round($avgSeconds / 86400, 1) : 0; // Konversi detik ke hari
 
-        // 3. Data Chart Pie (Jenis Cuti)
+        $avgDays = $avgSeconds ? round($avgSeconds / 86400, 1) : 0;
+
         $jenisCutiStats = (clone $query)
             ->select('jenis_cuti', DB::raw('count(*) as total'))
             ->groupBy('jenis_cuti')
             ->pluck('total', 'jenis_cuti');
-            
+
         $chartLabels = $jenisCutiStats->keys();
         $chartValues = $jenisCutiStats->values();
 
-        // 4. Data Tabel (Statistik per Bidang Unit)
         $rawRequests = (clone $query)->with('user')->get();
 
-        $unitStats = $rawRequests->groupBy(function($item) {
-            // Fix: Grouping berdasarkan 'bidang_unit'
+        $unitStats = $rawRequests->groupBy(function ($item) {
             return $item->user->bidang_unit ?? 'Umum';
-        })->map(function($group, $unitName) {
+        })->map(function ($group, $unitName) {
             $totalUnit = $group->count();
-            $appUnit   = $group->where('status', 'approved')->count();
-            $rejUnit   = $group->where('status', 'rejected')->count();
-            $pendUnit  = $group->where('status', 'pending')->count();
-            
+            $appUnit   = $group->whereIn('status', ['approved', 'disetujui'])->count();
+            $rejUnit   = $group->whereIn('status', ['rejected', 'ditolak'])->count();
+            $pendUnit  = $group->whereIn('status', ['pending', 'diproses', 'tertunda'])->count();
+
             return [
                 'name' => $unitName,
                 'total' => $totalUnit,
                 'approved' => $appUnit,
                 'rejected' => $rejUnit,
                 'pending' => $pendUnit,
-                'rate' => $totalUnit > 0 ? round(($appUnit / $totalUnit) * 100, 1) : 0
+                'rate' => $totalUnit > 0 ? round(($appUnit / $totalUnit) * 100, 1) : 0,
             ];
-        })->sortByDesc('total'); // Urutkan dari yang paling banyak mengajukan
+        })->sortByDesc('total');
 
         return view('admin.laporan', compact(
-            'filter', 'labelWaktu',
-            'listBidang', 
-            'total', 'approved', 'rejected', 'pending',
-            'persenApproved', 'persenRejected', 'persenPending',
+            'filter',
+            'labelWaktu',
+            'listBidang',
+            'total',
+            'approved',
+            'rejected',
+            'pending',
+            'persenApproved',
+            'persenRejected',
+            'persenPending',
             'avgDays',
-            'chartLabels', 'chartValues',
+            'chartLabels',
+            'chartValues',
             'unitStats'
         ));
     }
