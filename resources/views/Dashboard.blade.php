@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SIIPUL - Disdikbudpora Kab. Semarang</title>
+    <title>SIPERCUT - Disdikbudpora Kab. Semarang</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -35,7 +35,7 @@
     <section class="text-center pt-16 pb-12 bg-white">
         <div class="container mx-auto px-4">
             <h2 class="text-[#9E2A2B] font-bold text-2xl mb-2">Selamat Datang di Aplikasi</h2>
-            <h1 class="text-black font-extrabold text-5xl mb-8">SIIPUL</h1>
+            <h1 class="text-black font-extrabold text-5xl mb-8">SIPERCUT</h1>
 
             <div class="flex justify-center mb-8">
                 <img src="{{ asset('logokabupatensemarang.png') }}" alt="Logo Kabupaten Semarang" class="h-32 w-auto object-contain drop-shadow-md">

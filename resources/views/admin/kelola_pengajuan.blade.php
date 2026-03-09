@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', 'Kelola Pengajuan - SIIPUL')
+@section('title', 'Kelola Pengajuan - SIPERCUT')
 
 @push('styles')
 <style>

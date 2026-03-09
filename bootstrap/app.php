@@ -14,6 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'clean.output' => \App\Http\Middleware\CleanOutputBuffer::class,
+
+            'no.cache' => \App\Http\Middleware\NoCache::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

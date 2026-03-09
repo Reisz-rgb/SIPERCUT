@@ -126,7 +126,7 @@
     </section>
 
     <div class="text-center pt-8 pb-4">
-        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">SIIPUL © {{ now()->year }} • Disdikbudpora Kab Semarang</p>
+        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">SIPERCUT © {{ now()->year }} • Disdikbudpora Kab Semarang</p>
     </div>
 
     {{-- Modal detail (tetap pakai id & JS lama agar logic tidak berubah) --}}
@@ -211,7 +211,7 @@
 
                 <div class="flex gap-2">
                     {{-- Tombol Download Surat (Hanya untuk approved) --}}
-                    <a href="#" id="btnDownloadSurat" class="hidden sm:inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-extrabold text-white bg-green-600 hover:bg-green-700 transition-all">
+                    <a href="#" data-download-url-template="{{ route('user.cuti.download', ['id' => '__ID__']) }}" id="btnDownloadSurat" class="hidden sm:inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-extrabold text-white bg-green-600 hover:bg-green-700 transition-all">
                         <i class="bi bi-download"></i>
                         Download Surat
                     </a>
@@ -313,10 +313,11 @@
                 statusAlert.style.color = "#1f7a46";
                 statusAlert.textContent = "Pengajuan ini telah disetujui.";
                 btnDownloadSurat.style.display = 'inline-flex';
-                // Set URL download dengan ID dari activeData
+                // Set URL download dengan ID (hindari pakai variable Blade $leave di halaman list)
                 const leaveId = activeData.leaveId || activeBtn.closest('.h-card').getAttribute('data-leave-id');
-                if(leaveId) {
-                    btnDownloadSurat.href = `/user/cuti/${leaveId}/download`;
+                if (leaveId) {
+                    const tpl = btnDownloadSurat.dataset.downloadUrlTemplate;
+                    btnDownloadSurat.href = tpl ? tpl.replace('__ID__', leaveId) : `/user/cuti/${leaveId}/download`;
                 }
             } else {
                 modalTitle.textContent = "Detail Pengajuan";

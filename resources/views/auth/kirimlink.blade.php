@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Link Reset Terkirim - SIIPUL</title>
+    <title>Link Reset Terkirim - SIPERCUT</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -17,7 +17,7 @@
         <div class="flex justify-center mb-3">
             <img src="{{ asset('logokabupatensemarang.png') }}" alt="Logo Kab Semarang" class="h-16 w-auto object-contain drop-shadow-md">
         </div>
-        <h1 class="text-3xl font-bold tracking-wide mb-1">SIIPUL</h1>
+        <h1 class="text-3xl font-bold tracking-wide mb-1">SIPERCUT</h1>
         <p class="text-sm font-light opacity-90 tracking-wide">Sistem Informasi Cuti Pegawai</p>
     </header>
 

@@ -1,12 +1,12 @@
 @extends('layouts.admin')
-@section('title', 'Laporan & Analytics - SIIPUL')
+@section('title', 'Laporan & Analytics - SIPERCUT')
 
 @push('styles')
 <style>
     /*
       PENTING:
       Jangan override layout global dari layouts.admin (body, :root, .sidebar, .main-content, dll)
-      Biar sidebar (logo SIIPUL / Kab. Semarang) tetap konsisten di semua halaman.
+      Biar sidebar (logo SIPERCUT / Kab. Semarang) tetap konsisten di semua halaman.
       Semua style di halaman ini di-scope ke .laporan-page
     */
 

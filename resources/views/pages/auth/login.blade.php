@@ -7,7 +7,7 @@
 <body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
     <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-10">
         <div class="text-center mb-10">
-            <h1 class="text-3xl font-bold text-primary-600">SIIPUL</h1>
+            <h1 class="text-3xl font-bold text-primary-600">SIPERCUT</h1>
             <p class="text-slate-500 mt-2 font-medium">Masuk untuk mengelola cuti Anda</p>
         </div>
         <form action="{{ route('dashboard') }}" method="GET">
