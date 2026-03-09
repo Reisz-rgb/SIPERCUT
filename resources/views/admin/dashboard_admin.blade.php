@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', 'Dashboard Admin - SIIPUL')
+@section('title', 'Dashboard Admin - SIPERCUT')
 
 @section('content')
 <div class="hero-banner">

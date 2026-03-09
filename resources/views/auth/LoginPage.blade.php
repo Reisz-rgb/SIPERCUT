@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Masuk - SIIPUL</title>
+    <title>Masuk - SIPERCUT</title>
 
     {{-- Selaraskan dengan theme Admin/User (Bootstrap + Plus Jakarta + skema warna yang sama) --}}
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -171,7 +171,7 @@
         <div class="landing-brand">
             <img src="{{ asset('logokabupatensemarang.png') }}" alt="Logo Kab Semarang">
             <div>
-                <div class="brand-title">SIIPUL</div>
+                <div class="brand-title">SIPERCUT</div>
                 <div class="brand-subtitle">DISDIKBUDPORA KAB. SEMARANG</div>
             </div>
         </div>
@@ -181,7 +181,7 @@
         <div class="auth-card">
             <div class="auth-card-header">
                 <div class="text-center">
-                    <h1 class="m-0" style="font-size: 1.35rem; font-weight: 800;">Masuk ke SIIPUL</h1>
+                    <h1 class="m-0" style="font-size: 1.35rem; font-weight: 800;">Masuk ke SIPERCUT</h1>
                     <p class="m-0 mt-1" style="color: rgba(255,255,255,0); display:none;">&nbsp;</p>
                     <p class="m-0" style="color: var(--text-secondary); font-size: 0.92rem;">Sistem Informasi Cuti Pegawai</p>
                 </div>

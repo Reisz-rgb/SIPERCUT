@@ -9,7 +9,7 @@
                 <img src="{{ asset('logokabupatensemarang.png') }}" alt="Logo Kab Semarang" class="w-full h-full object-contain">
             </div>
             <div class="leading-tight">
-                <div class="text-xl font-extrabold tracking-tight text-[var(--maroon)]">SIIPUL</div>
+                <div class="text-xl font-extrabold tracking-tight text-[var(--maroon)]">SIPERCUT</div>
                 <div class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kab. Semarang</div>
             </div>
         </a>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Admin - SIIPUL')</title>
+    <title>@yield('title', 'Admin - SIPERCUT')</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -190,7 +190,7 @@
         <a href="#" class="sidebar-brand">
             <img src="{{ asset('logokabupatensemarang.png') }}" alt="Logo" width="36">
             <div style="line-height: 1.1;">
-                <div style="font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px;">SIIPUL</div>
+                <div style="font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px;">SIPERCUT</div>
                 <div style="font-size: 0.7rem; color: #94A3B8; font-weight: 500;">Kab. Semarang</div>
             </div>
         </a>

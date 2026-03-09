@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title') - SIIPUL</title>
+    <title>@yield('title') - SIPERCUT</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>body { font-family: 'Inter', sans-serif; }</style>
@@ -24,7 +24,7 @@
 <body class="bg-slate-50 flex h-screen overflow-hidden">
     <aside class="w-64 bg-white border-r border-slate-200 flex flex-col flex-shrink-0">
         <div class="p-6 border-b border-slate-100">
-            <h1 class="text-2xl font-bold text-primary-600 tracking-tight">SIIPUL</h1>
+            <h1 class="text-2xl font-bold text-primary-600 tracking-tight">SIPERCUT</h1>
         </div>
         <nav class="flex-1 p-4 space-y-1">
             <a href="{{ route('dashboard') }}" class="flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ request()->routeIs('dashboard') ? 'bg-primary-50 text-primary-600' : 'text-slate-600 hover:bg-slate-50' }}">

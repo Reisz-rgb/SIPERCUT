@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', 'Edit Pegawai - SIIPUL')
+@section('title', 'Edit Pegawai - SIPERCUT')
 
 @push('styles')
 <style>
@@ -251,7 +251,7 @@
                                 </select>
                                 <div class="d-flex align-items-start gap-2 mt-2 text-muted small">
                                     <i class="bi bi-info-circle-fill mt-1 text-primary"></i>
-                                    <span style="line-height: 1.4;">Akun dengan status <strong>Non-aktif</strong> tidak akan bisa login ke dalam sistem aplikasi SIIPUL. Pastikan status benar sebelum menyimpan.</span>
+                                    <span style="line-height: 1.4;">Akun dengan status <strong>Non-aktif</strong> tidak akan bisa login ke dalam sistem aplikasi SIPERCUT. Pastikan status benar sebelum menyimpan.</span>
                                 </div>
                             </div>
                         </div>

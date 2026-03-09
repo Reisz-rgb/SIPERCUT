@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html>
 <head>
     <title>Laporan Rekapitulasi Cuti</title>
@@ -104,7 +103,7 @@
     <div class="footer">
         <p>Mengetahui,<br>Kepala Dinas</p>
         <br><br><br>
-        <p>__________________________</p>
+        <p>__________</p>
     </div>
 
 </body>

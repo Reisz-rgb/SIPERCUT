@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daftar Akun Baru - SIIPUL</title>
+    <title>Daftar Akun Baru - SIPERCUT</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -167,7 +167,7 @@
         <div class="landing-brand">
             <img src="{{ asset('logokabupatensemarang.png') }}" alt="Logo Kab Semarang">
             <div>
-                <div class="brand-title">SIIPUL</div>
+                <div class="brand-title">SIPERCUT</div>
                 <div class="brand-subtitle">DISDIKBUDPORA KAB. SEMARANG</div>
             </div>
         </div>

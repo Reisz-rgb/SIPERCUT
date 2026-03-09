@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', 'Profil Saya - SIIPUL')
+@section('title', 'Profil Saya - SIPERCUT')
 
 @push('styles')
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">

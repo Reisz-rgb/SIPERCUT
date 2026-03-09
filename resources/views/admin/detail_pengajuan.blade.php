@@ -1,5 +1,5 @@
 @extends('layouts.admin')
-@section('title', 'Detail Pengajuan - SIIPUL')
+@section('title', 'Detail Pengajuan - SIPERCUT')
 
 @push('styles')
 <style>
@@ -333,7 +333,7 @@
                                                 <div class="text-muted" style="font-size: 0.7rem;">Lampiran pengajuan cuti</div>
                                             </div>
                                         </div>
-                                        <a href="{{ asset('storage/' . $pengajuan->file_path) }}" target="_blank" class="btn btn-sm btn-outline-dark rounded-pill px-3 fw-medium">
+                                        <a href="{{ route('admin.pengajuan.lampiran', $pengajuan->id) }}" target="_blank" class="btn btn-sm btn-outline-dark rounded-pill px-3 fw-medium">
                                             Buka <i class="bi bi-box-arrow-up-right ms-1"></i>
                                         </a>
                                     </div>
