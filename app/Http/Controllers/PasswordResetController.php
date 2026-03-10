@@ -2,111 +2,100 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ResetPasswordMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class PasswordResetController extends Controller
 {
-    /**
-     * Show forgot password form
-     */
     public function showForgotPassword()
     {
         return view('auth.LupaPassword');
     }
 
-    /**
-     * Send reset link via SMS (simulasi)
-     */
     public function sendResetLink(Request $request)
     {
         $request->validate([
-            'phone' => 'required|string',
+            'email' => 'required|email',
         ], [
-            'phone.required' => 'Nomor HP wajib diisi',
+            'email.required' => 'Alamat email wajib diisi',
+            'email.email'    => 'Format email tidak valid',
         ]);
 
-        $phone = preg_replace('/[^0-9]/', '', $request->phone);
+        $user = User::where('email', $request->email)->first();
 
-        $user = User::where('phone', $phone)->first();
-
+        // Gunakan generic response agar email valid/tidak valid tidak bocor ke publik
         if (!$user) {
-            return redirect()->back()
-                ->withErrors(['phone' => 'Nomor HP tidak terdaftar'])
-                ->withInput();
+            return redirect()->route('password.sent');
         }
 
         // Generate token
         $token = Str::random(64);
 
-        // Simpan token ke database
         DB::table('password_reset_tokens')->updateOrInsert(
-            ['phone' => $phone],
+            ['email' => $request->email],
             [
-                'token' => Hash::make($token),
+                'token'      => Hash::make($token),
                 'created_at' => now(),
             ]
         );
 
-        // TODO: Kirim SMS dengan link reset
-        // Untuk development, kita simpan token di session
-        session(['reset_token' => $token, 'reset_phone' => $phone]);
+        // Buat URL reset
+        $resetUrl = route('password.reset', [
+            'token' => $token,
+            'email' => $request->email,
+        ]);
+
+        // Kirim email
+        Mail::to($user->email)->send(new ResetPasswordMail($resetUrl, $user->name));
 
         return redirect()->route('password.sent');
     }
 
-    /**
-     * Show reset password form
-     */
     public function showResetForm(Request $request, $token)
     {
-        return view('auth.ResetPassword', ['token' => $token]);
+        return view('auth.ResetPassword', [
+            'token' => $token,
+            'email' => $request->email,
+        ]);
     }
 
-    /**
-     * Process password reset
-     */
     public function reset(Request $request)
     {
         $request->validate([
-            'token' => 'required',
-            'phone' => 'required',
+            'token'    => 'required',
+            'email'    => 'required|email',
             'password' => 'required|string|min:6|confirmed',
         ], [
-            'password.required' => 'Password baru wajib diisi',
-            'password.min' => 'Password minimal 6 karakter',
+            'password.required'  => 'Password baru wajib diisi',
+            'password.min'       => 'Password minimal 6 karakter',
             'password.confirmed' => 'Konfirmasi password tidak cocok',
         ]);
 
-        $phone = preg_replace('/[^0-9]/', '', $request->phone);
-
-        // Cek token
         $resetRecord = DB::table('password_reset_tokens')
-            ->where('phone', $phone)
+            ->where('email', $request->email)
             ->first();
 
         if (!$resetRecord || !Hash::check($request->token, $resetRecord->token)) {
             return redirect()->back()
-                ->withErrors(['token' => 'Token reset tidak valid']);
+                ->withErrors(['token' => 'Link reset tidak valid atau sudah digunakan']);
         }
 
-        // Cek apakah token sudah expired (24 jam)
-        if (now()->diffInHours($resetRecord->created_at) > 24) {
-            return redirect()->back()
-                ->withErrors(['token' => 'Token reset sudah kadaluarsa']);
+        // Expired dalam 1 jam
+        if (now()->diffInMinutes($resetRecord->created_at) > 60) {
+            DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+            return redirect()->route('password.request')
+                ->withErrors(['email' => 'Link reset sudah kadaluarsa. Silakan minta ulang.']);
         }
 
-        // Update password
-        $user = User::where('phone', $phone)->first();
-        $user->update([
-            'password' => Hash::make($request->password),
-        ]);
+        $user = User::where('email', $request->email)->first();
+        $user->update(['password' => Hash::make($request->password)]);
 
-        // Hapus token
-        DB::table('password_reset_tokens')->where('phone', $phone)->delete();
+        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
 
         return redirect()->route('login')
             ->with('success', 'Password berhasil direset. Silakan login.');

@@ -27,19 +27,30 @@
             <div class="text-center mb-8">
                 <h2 class="text-3xl font-bold text-gray-800 mb-4">Lupa Password?</h2>
                 <p class="text-gray-500 text-sm leading-relaxed px-4">
-                    Masukkan Nomor HP anda yang terdaftar untuk menerima link reset password.
+                    Masukkan alamat email anda yang terdaftar untuk menerima link reset password.
                 </p>
             </div>
 
-            <form action="{{ url('/link-reset-terkirim') }}" method="GET">
+            @if ($errors->any())
+                <div class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    @foreach ($errors->all() as $error)
+                        <p class="text-red-600 text-sm">{{ $error }}</p>
+                    @endforeach
+                </div>
+            @endif
+
+            <form action="{{ route('password.email') }}" method="POST">
+                @csrf
                 
                 <div class="mb-8">
                     <label class="block text-gray-700 font-semibold mb-2 text-sm">
-                        Nomor HP: <span class="text-red-500">*</span>
+                        Alamat Email: <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" 
+                    <input type="email" 
+                           name="email"
+                           value="{{ old('email') }}"
                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#9E2A2B] focus:border-transparent transition placeholder-gray-300 text-gray-700" 
-                           placeholder="08xxxxx" 
+                           placeholder="contoh@email.com" 
                            required>
                 </div>
 
