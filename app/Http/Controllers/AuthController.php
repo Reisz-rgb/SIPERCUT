@@ -6,117 +6,90 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-    /**
-     * Show login form
-     */
+    // =========================================================================
+    // LOGIN
+    // =========================================================================
+
     public function showLogin()
     {
-        if (Auth::check()) {
-            return $this->redirectBasedOnRole();
-        }
-        return view('auth.LoginPage');
+        return Auth::check()
+            ? $this->redirectBasedOnRole()
+            : view('auth.LoginPage');
     }
 
-    /**
-     * Process login
-     */
     public function login(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'nip' => 'required|string',
+        $request->validate([
+            'nip'      => 'required|string',
             'password' => 'required|string',
         ], [
-            'nip.required' => 'NIP wajib diisi',
+            'nip.required'      => 'NIP wajib diisi',
             'password.required' => 'Password wajib diisi',
         ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        // Bersihkan NIP dari spasi dan karakter non-numeric
-        $nip = preg_replace('/[^0-9]/', '', $request->nip);
-
         $credentials = [
-            'nip' => $nip,
+            'nip'      => $this->sanitizeNumeric($request->nip),
             'password' => $request->password,
         ];
 
         if (Auth::attempt($credentials, $request->filled('remember'))) {
             $request->session()->regenerate();
-            
             return $this->redirectBasedOnRole();
         }
 
-        return redirect()->back()
+        return back()
             ->withErrors(['login' => 'NIP atau password salah'])
             ->withInput();
     }
 
-    /**
-     * Show register form
-     */
+    // =========================================================================
+    // REGISTER
+    // =========================================================================
+
     public function showRegister()
     {
-        if (Auth::check()) {
-            return $this->redirectBasedOnRole();
-        }
-        return view('auth.RegisterPage');
+        return Auth::check()
+            ? $this->redirectBasedOnRole()
+            : view('auth.RegisterPage');
     }
 
-    /**
-     * Process registration
-     */
     public function register(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'nip' => 'required|string',
-            'phone' => 'required|string',
+        $request->validate([
+            'name'     => 'required|string|max:255',
+            'nip'      => 'required|string',
+            'phone'    => 'required|string',
             'password' => 'required|string|min:6|confirmed',
         ], [
-            'name.required' => 'Nama wajib diisi',
-            'nip.required' => 'NIP wajib diisi',
-            'phone.required' => 'Nomor HP wajib diisi',
-            'password.required' => 'Password wajib diisi',
-            'password.min' => 'Password minimal 6 karakter',
+            'name.required'      => 'Nama wajib diisi',
+            'nip.required'       => 'NIP wajib diisi',
+            'phone.required'     => 'Nomor HP wajib diisi',
+            'password.required'  => 'Password wajib diisi',
+            'password.min'       => 'Password minimal 6 karakter',
             'password.confirmed' => 'Konfirmasi password tidak cocok',
         ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-
-        // Bersihkan NIP dan phone
-        $nip = preg_replace('/[^0-9]/', '', $request->nip);
-        $phone = preg_replace('/[^0-9]/', '', $request->phone);
-
-
-        // Auto login setelah register
-        Auth::login(User::create([
-            'name' => $request->name,
-            'nip' => $nip,
-            'phone' => $phone,
+        $user = User::create([
+            'name'     => $request->name,
+            'nip'      => $this->sanitizeNumeric($request->nip),
+            'phone'    => $this->sanitizeNumeric($request->phone),
             'password' => Hash::make($request->password),
-            'role' => 'user',
-        ]));
+            'role'     => 'user',
+        ]);
 
+        Auth::login($user);
         $request->session()->regenerate();
 
         return redirect()->route('register.success');
     }
 
-    /**
-     * Logout
-     */
+    // =========================================================================
+    // LOGOUT
+    // =========================================================================
+
     public function logout(Request $request)
     {
         Auth::logout();
@@ -126,14 +99,19 @@ class AuthController extends Controller
         return redirect()->route('login');
     }
 
-    /**
-     * Redirect based on user role
-     */
+    // =========================================================================
+    // PRIVATE HELPERS
+    // =========================================================================
+
     private function redirectBasedOnRole()
     {
-        if (Auth::user()->isAdmin()) {
-            return redirect()->route('admin.dashboard');
-        }
-        return redirect()->route('user.dashboard');
+        return Auth::user()->isAdmin()
+            ? redirect()->route('admin.dashboard')
+            : redirect()->route('user.dashboard');
+    }
+
+    private function sanitizeNumeric(string $value): string
+    {
+        return preg_replace('/[^0-9]/', '', $value);
     }
 }

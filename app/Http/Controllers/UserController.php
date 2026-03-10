@@ -2,368 +2,376 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\LeaveRequest;
+use App\Models\LeaveBalance;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Models\Cuti;
-use App\Models\LeaveRequest;
-use App\Models\LeaveBalance;
+use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpWord\TemplateProcessor;
-use Carbon\Carbon;
 
 class UserController extends Controller
 {
+    // =========================================================================
+    // DASHBOARD
+    // =========================================================================
 
-    /**
-     * Show user dashboard
-     */
     public function dashboard()
     {
         $user = Auth::user();
 
         if (!$user) {
-        return redirect()->route('login');
+            return redirect()->route('login');
         }
 
-        $currentYear = now()->year;
+        $balanceData     = $this->resolveLeaveBalance($user->id);
+        $recentLeaves    = $this->getRecentLeaves($user->id);
+        $submissionStats = $this->getSubmissionStats($user->id);
 
-        // Wrap dalam try-catch agar error balance tidak crash halaman
-        try {
-        $leaveBalance = LeaveBalance::calculateTotalAvailable($user->id, $currentYear);
-        // Dashboard:
-        // - Jatah Tahunan  : remaining tahun berjalan (berkurang saat approved)
-        // - Telah Diambil  : used tahun berjalan (bertambah saat approved)
-        // - Sisa Tersedia  : total_available (tahun berjalan + bonus N-1 + bonus N-2)
-        $totalQuota = $leaveBalance['n']['remaining'];
-        $usedLeave = $leaveBalance['n']['used'];
-        $remainingLeave = $leaveBalance['total_available'];
-        $annualQuota = $leaveBalance['n']['quota'];
-        $maxAvailable = $leaveBalance['n']['quota'] + ($leaveBalance['n1']['bonus'] ?? 0) + ($leaveBalance['n2']['bonus'] ?? 0);
-        } catch (\Throwable $e) {  // ← ganti \Exception jadi \Throwable
-            \Log::error('LeaveBalance error: ' . $e->getMessage());
-            $totalQuota = 12;
-            $usedLeave = 0;
-            $remainingLeave = 12;
-            $annualQuota = 12;
-            $maxAvailable = 12;
-        }
-        
-        // Ambil riwayat pengajuan terbaru (3 terakhir) dari LeaveRequest
-        $recentLeaves = LeaveRequest::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->limit(3)
-            ->get();
-        
-        // Hitung statistik status untuk donut chart
-        $totalSubmissions = LeaveRequest::where('user_id', $user->id)->count();
-        
-        if ($totalSubmissions > 0) {
-            $approvedCount = LeaveRequest::where('user_id', $user->id)
-                ->where('status', LeaveRequest::STATUS_APPROVED)
-                ->count();
-            $pendingCount = LeaveRequest::where('user_id', $user->id)
-                ->where('status', LeaveRequest::STATUS_PENDING)
-                ->count();
-            $rejectedCount = LeaveRequest::where('user_id', $user->id)
-                ->where('status', LeaveRequest::STATUS_REJECTED)
-                ->count();
-            
-            $approvedPercent = round(($approvedCount / $totalSubmissions) * 100);
-            $pendingPercent = round(($pendingCount / $totalSubmissions) * 100);
-            $rejectedPercent = round(($rejectedCount / $totalSubmissions) * 100);
-        } else {
-            $approvedPercent = $pendingPercent = $rejectedPercent = 0;
-        }
-        
-        return view('user.UserDashboard', compact(
-            'user',
-            'totalQuota',
-            'usedLeave',
-            'remainingLeave',
-            'annualQuota',
-            'maxAvailable',
-            'recentLeaves',
-            'approvedPercent',
-            'pendingPercent',
-            'rejectedPercent'
+        return view('user.UserDashboard', array_merge(
+            compact('user', 'recentLeaves'),
+            $balanceData,
+            $submissionStats
         ));
     }
-    
-    /**
-     * Show user profile
-     */
+
+    // =========================================================================
+    // PROFIL
+    // =========================================================================
+
     public function profile()
     {
-        $user = Auth::user();
-        return view('user.ProfilPage', compact('user'));
+        return view('user.ProfilPage', ['user' => Auth::user()]);
     }
-    
-    /**
-     * Show edit profile form
-     */
+
     public function editProfile()
     {
-        $user = Auth::user();
-        return view('user.EditProfilPage', compact('user'));
+        return view('user.EditProfilPage', ['user' => Auth::user()]);
     }
-    
-    /**
-     * Update user profile
-     */
+
     public function updateProfile(Request $request)
     {
         $user = Auth::user();
-        
+
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'nullable|email|unique:users,email,' . $user->id,
-            'phone' => 'required|string|unique:users,phone,' . $user->id,
-            'jabatan' => 'nullable|string|max:255',
+            'name'        => 'required|string|max:255',
+            'email'       => 'nullable|email|unique:users,email,' . $user->id,
+            'phone'       => 'required|string|unique:users,phone,' . $user->id,
+            'jabatan'     => 'nullable|string|max:255',
             'bidang_unit' => 'nullable|string|max:255',
         ], [
-            'name.required' => 'Nama wajib diisi',
-            'email.unique' => 'Email sudah digunakan',
+            'name.required'  => 'Nama wajib diisi',
+            'email.unique'   => 'Email sudah digunakan',
             'phone.required' => 'Nomor HP wajib diisi',
-            'phone.unique' => 'Nomor HP sudah digunakan',
+            'phone.unique'   => 'Nomor HP sudah digunakan',
         ]);
-        
-        // Bersihkan phone
-        $phone = preg_replace('/[^0-9]/', '', $request->phone);
-        
-        $user->update([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'phone' => $phone,
-            'jabatan' => $validated['jabatan'],
-            'bidang_unit' => $validated['bidang_unit'],
-        ]);
-        
-        return redirect()
-            ->route('user.profil')
-            ->with('status', 'sukses');
+
+        $user->update(array_merge($validated, [
+            'phone' => $this->sanitizePhone($request->phone),
+        ]));
+
+        return redirect()->route('user.profil')->with('status', 'sukses');
     }
-    
-    /**
-     * Show change password form
-     */
+
+    // =========================================================================
+    // PASSWORD
+    // =========================================================================
+
     public function showChangePassword()
     {
         return view('user.ChangePassword');
     }
-    
-    /**
-     * Update password
-     */
+
     public function updatePassword(Request $request)
     {
-        $validated = $request->validate([
+        $request->validate([
             'current_password' => 'required',
-            'password' => 'required|string|min:6|confirmed',
+            'password'         => 'required|string|min:6|confirmed',
         ], [
             'current_password.required' => 'Password lama wajib diisi',
-            'password.required' => 'Password baru wajib diisi',
-            'password.min' => 'Password minimal 6 karakter',
-            'password.confirmed' => 'Konfirmasi password tidak cocok',
+            'password.required'         => 'Password baru wajib diisi',
+            'password.min'              => 'Password minimal 6 karakter',
+            'password.confirmed'        => 'Konfirmasi password tidak cocok',
         ]);
-        
+
         $user = Auth::user();
-        
-        // Debug: Cek password hash
-        \Log::info('Current Password Input: ' . $request->current_password);
-        \Log::info('Stored Password Hash: ' . $user->password);
-        \Log::info('Check Result: ' . (Hash::check($request->current_password, $user->password) ? 'TRUE' : 'FALSE'));
-        
-        // Cek password lama
+
         if (!Hash::check($request->current_password, $user->password)) {
-            return redirect()
-                ->back()
+            return back()
                 ->withErrors(['current_password' => 'Password lama tidak sesuai. Gunakan password terakhir yang Anda set, atau gunakan NIP jika belum pernah mengubah password.'])
                 ->withInput();
         }
-        
-        // Update password
-        $user->update([
-            'password' => Hash::make($request->password)
-        ]);
-        
-        return redirect()
-            ->route('user.profil')
-            ->with('status', 'password_updated');
+
+        $user->update(['password' => Hash::make($request->password)]);
+
+        return redirect()->route('user.profil')->with('status', 'password_updated');
     }
-    
-    /**
-     * Show user leave history
-     */
+
+    // =========================================================================
+    // RIWAYAT CUTI
+    // =========================================================================
+
     public function history(Request $request)
     {
-        $user = Auth::user();
-        
-        // Filter berdasarkan status
+        $user   = Auth::user();
         $status = $request->get('status', 'all');
-        
-        $query = LeaveRequest::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc');
-        
-        // Apply filter
-        if ($status !== 'all') {
-            $statusMap = [
-                'approved' => LeaveRequest::STATUS_APPROVED,
-                'pending' => LeaveRequest::STATUS_PENDING,
-                'rejected' => LeaveRequest::STATUS_REJECTED,
-            ];
-            
-            if (isset($statusMap[$status])) {
-                $query->where('status', $statusMap[$status]);
-            }
-        }
-        
-        $leaves = $query->paginate(10);
-        
+
+        $statusMap = [
+            'approved' => LeaveRequest::STATUS_APPROVED,
+            'pending'  => LeaveRequest::STATUS_PENDING,
+            'rejected' => LeaveRequest::STATUS_REJECTED,
+        ];
+
+        $leaves = LeaveRequest::where('user_id', $user->id)
+            ->when(
+                $status !== 'all' && isset($statusMap[$status]),
+                fn ($q) => $q->where('status', $statusMap[$status])
+            )
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+
         return view('user.RiwayatPage', compact('leaves', 'user', 'status'));
     }
-    
-   public function downloadSuratCuti($id)
+
+    // =========================================================================
+    // DOWNLOAD SURAT CUTI
+    // =========================================================================
+
+    public function downloadSuratCuti($id)
     {
-        // Bersihkan output buffer
-        while (ob_get_level()) {
-            ob_end_clean();
-        }
-        
-        error_reporting(0);
-        ini_set('display_errors', '0');
-        
+        $this->clearOutputBuffers();
+
         try {
             $leave = LeaveRequest::with('user')->findOrFail($id);
-            $user = $leave->user;
-            
-            // Cari template dari beberapa kemungkinan lokasi (biar tidak 404 karena beda lokasi unzip)
-$templateCandidates = [
-    storage_path('app/template/surat_cuti_template.docx'),
-    storage_path('app/template/template/surat_cuti_template.docx'),
-    base_path('storage/app/template/surat_cuti_template.docx'),
-    base_path('storage/app/template/template/surat_cuti_template.docx'),
-];
+            $user  = $leave->user;
 
-$templatePath = null;
-foreach ($templateCandidates as $candidate) {
-    if (is_file($candidate) && is_readable($candidate)) {
-        $templatePath = $candidate;
-        break;
-    }
-}
+            $templatePath = $this->findTemplatePath();
+            abort_unless($templatePath, 404, 'Template tidak ditemukan');
 
-if (!$templatePath) {
-    \Log::error('Template not found. Tried: ' . implode(' | ', $templateCandidates));
-    abort(404, 'Template tidak ditemukan');
-}
+            $processor = $this->fillTemplate($templatePath, $leave, $user);
+            $fileName  = 'Surat_Cuti_'
+                       . preg_replace('/[^A-Za-z0-9_\-]/', '_', $user->name)
+                       . '_' . date('Ymd_His') . '.docx';
 
-$templateProcessor = new TemplateProcessor($templatePath);
+            $tempFile = $this->saveTempFile($processor, $fileName);
 
-// Helper function untuk sanitize text
-            $sanitize = function($text) {
-                if (empty($text) || is_null($text)) return '-';
-                // Konversi ke string terlebih dahulu
-                $text = (string) $text;
-                // Hapus karakter control characters yang bisa corrupt XML
-                $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $text);
-                // Escape XML entities
-                $text = htmlspecialchars($text, ENT_XML1 | ENT_QUOTES, 'UTF-8');
-                return $text;
-            };
-            
-            // Set data dengan sanitization
-            $templateProcessor->setValue('TANGGAL_SURAT', Carbon::now()->isoFormat('D MMMM YYYY'));
-            $templateProcessor->setValue('NAMA', $sanitize($user->name));
-            $templateProcessor->setValue('NIP', $sanitize($user->nip));
-            $templateProcessor->setValue('JABATAN', $sanitize($user->jabatan));
-            $templateProcessor->setValue('MASA_KERJA', $sanitize($user->masa_kerja));
-            $templateProcessor->setValue('UNIT_KERJA', $sanitize($user->unit_kerja));
-            
-            // Set jenis cuti checkboxes
-            $jenisMap = [
-                'Cuti Tahunan' => 'CUTI_TAHUNAN',
-                'Cuti Besar' => 'CUTI_BESAR',
-                'Cuti Sakit' => 'CUTI_SAKIT',
-                'Cuti Melahirkan' => 'CUTI_MELAHIRKAN',
-                'Cuti Karena Alasan Penting' => 'CUTI_KARENA_ALASAN_PENTING',
-                'Cuti di Luar Tanggungan Negara' => 'CUTI_DI_LUAR_TANGGUNGAN_NEGARA',
-            ];
-            
-            foreach ($jenisMap as $jenis => $placeholder) {
-                $templateProcessor->setValue($placeholder, 
-                    $leave->jenis_cuti === $jenis ? 'X' : ''
-                );
-            }
-            
-            $templateProcessor->setValue('ALASAN', $sanitize($leave->reason));
-            $templateProcessor->setValue('LAMA_HARI', $leave->duration . ' hari');
-            $templateProcessor->setValue('TANGGAL_MULAI', 
-                Carbon::parse($leave->start_date)->isoFormat('D MMMM YYYY')
-            );
-            $templateProcessor->setValue('TANGGAL_SELESAI', 
-                Carbon::parse($leave->end_date)->isoFormat('D MMMM YYYY')
-            );
-            
-            $templateProcessor->setValue('SISA_N-2', $sanitize($user->sisa_cuti_n2));
-            $templateProcessor->setValue('SISA_N-1', $sanitize($user->sisa_cuti_n1));
-            $templateProcessor->setValue('N', $sanitize($user->sisa_cuti_n));
-            $templateProcessor->setValue('KETERANGAN', '-');
-            
-            $templateProcessor->setValue('ALAMAT', $sanitize($leave->address));
-            $templateProcessor->setValue('TELP', $sanitize($leave->phone));
-            
-            $templateProcessor->setValue('DISETUJUI', $leave->status === LeaveRequest::STATUS_APPROVED ? 'X' : '');
-            $templateProcessor->setValue('MENUNGGU', $leave->status === LeaveRequest::STATUS_PENDING ? 'X' : '');
-            $templateProcessor->setValue('TIDAK_DISETUJUI', $leave->status === LeaveRequest::STATUS_REJECTED ? 'X' : '');
-            
-            // Generate filename yang aman
-            $safeName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $user->name);
-            $fileName = 'Surat_Cuti_' . $safeName . '_' . date('Ymd_His') . '.docx';
-            
-            $tempPath = storage_path('app/temp');
-            if (!file_exists($tempPath)) {
-                mkdir($tempPath, 0755, true);
-            }
-            
-            $tempFile = $tempPath . '/' . $fileName;
-            
-            // Save file
-            $templateProcessor->saveAs($tempFile);
-            
-            if (!file_exists($tempFile)) {
-                throw new \Exception('File tidak berhasil dibuat');
-            }
-            
-            $fileSize = filesize($tempFile);
-            \Log::info('Generated file size: ' . $fileSize . ' bytes');
-            
-            // Validasi ukuran
-            if ($fileSize < 10000) {
-                \Log::warning('File size suspiciously small: ' . $fileSize . ' bytes');
-            }
-            
-            // Clear buffer sekali lagi sebelum download
-            while (ob_get_level()) {
-                ob_end_clean();
-            }
-            
-            // Return file dengan header yang tepat
-            return response()->download($tempFile, $fileName, [
-                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-                'Content-Disposition' => 'attachment; filename="' . $fileName . '"',
-                'Cache-Control' => 'no-cache, no-store, must-revalidate',
-                'Pragma' => 'no-cache',
-                'Expires' => '0',
-            ])->deleteFileAfterSend(true);
-            
+            $this->clearOutputBuffers();
+
+            return response()
+                ->download($tempFile, $fileName, $this->downloadHeaders())
+                ->deleteFileAfterSend(true);
+
         } catch (\Exception $e) {
-            \Log::error('Exception in downloadSuratCuti: ' . $e->getMessage());
-            
+            Log::error('downloadSuratCuti error: ' . $e->getMessage());
+
             if (isset($tempFile) && file_exists($tempFile)) {
                 unlink($tempFile);
             }
-            
+
             return back()->with('error', 'Gagal membuat surat cuti: ' . $e->getMessage());
+        }
+    }
+
+    // =========================================================================
+    // PRIVATE HELPERS
+    // =========================================================================
+
+    /**
+     * Ambil dan hitung data saldo cuti. Fallback ke nilai default bila error.
+     */
+    private function resolveLeaveBalance(int $userId): array
+    {
+        try {
+            $balance = LeaveBalance::calculateTotalAvailable($userId, now()->year);
+
+            return [
+                'totalQuota'     => $balance['n']['remaining'],
+                'usedLeave'      => $balance['n']['used'],
+                'remainingLeave' => $balance['total_available'],
+                'annualQuota'    => $balance['n']['quota'],
+                'maxAvailable'   => $balance['n']['quota']
+                                  + ($balance['n1']['bonus'] ?? 0)
+                                  + ($balance['n2']['bonus'] ?? 0),
+            ];
+        } catch (\Throwable $e) {
+            Log::error('LeaveBalance error: ' . $e->getMessage());
+
+            return [
+                'totalQuota'     => 12,
+                'usedLeave'      => 0,
+                'remainingLeave' => 12,
+                'annualQuota'    => 12,
+                'maxAvailable'   => 12,
+            ];
+        }
+    }
+
+    /**
+     * Ambil 3 riwayat pengajuan terbaru milik user.
+     */
+    private function getRecentLeaves(int $userId)
+    {
+        return LeaveRequest::where('user_id', $userId)
+            ->latest()
+            ->limit(3)
+            ->get();
+    }
+
+    /**
+     * Hitung statistik status pengajuan (untuk donut chart) dalam 1 query.
+     */
+    private function getSubmissionStats(int $userId): array
+    {
+        $stats = LeaveRequest::where('user_id', $userId)
+            ->selectRaw("
+                COUNT(*) as total,
+                SUM(status = 'approved') as approved,
+                SUM(status = 'pending')  as pending,
+                SUM(status = 'rejected') as rejected
+            ")
+            ->first();
+
+        $total = (int) $stats->total;
+
+        if ($total === 0) {
+            return ['approvedPercent' => 0, 'pendingPercent' => 0, 'rejectedPercent' => 0];
+        }
+
+        return [
+            'approvedPercent' => round(($stats->approved / $total) * 100),
+            'pendingPercent'  => round(($stats->pending  / $total) * 100),
+            'rejectedPercent' => round(($stats->rejected / $total) * 100),
+        ];
+    }
+
+    private function sanitizePhone(string $phone): string
+    {
+        return preg_replace('/[^0-9]/', '', $phone);
+    }
+
+    /**
+     * Sanitize teks untuk dimasukkan ke template DOCX (cegah XML corrupt).
+     */
+    private function sanitizeDocxValue(?string $text): string
+    {
+        if (empty($text)) {
+            return '-';
+        }
+
+        $text = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', (string) $text);
+        return htmlspecialchars($text, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+    }
+
+    /**
+     * Cari template surat cuti dari beberapa kemungkinan lokasi.
+     */
+    private function findTemplatePath(): ?string
+    {
+        $candidates = [
+            storage_path('app/template/surat_cuti_template.docx'),
+            storage_path('app/template/template/surat_cuti_template.docx'),
+            base_path('storage/app/template/surat_cuti_template.docx'),
+            base_path('storage/app/template/template/surat_cuti_template.docx'),
+        ];
+
+        foreach ($candidates as $path) {
+            if (is_file($path) && is_readable($path)) {
+                return $path;
+            }
+        }
+
+        Log::error('Template not found. Tried: ' . implode(' | ', $candidates));
+        return null;
+    }
+
+    /**
+     * Isi placeholder template DOCX dengan data leave request.
+     */
+    private function fillTemplate(string $templatePath, $leave, $user): TemplateProcessor
+    {
+        $s  = fn ($v) => $this->sanitizeDocxValue($v);
+        $tp = new TemplateProcessor($templatePath);
+
+        // Data surat
+        $tp->setValue('TANGGAL_SURAT', Carbon::now()->isoFormat('D MMMM YYYY'));
+        $tp->setValue('NAMA',          $s($user->name));
+        $tp->setValue('NIP',           $s($user->nip));
+        $tp->setValue('JABATAN',       $s($user->jabatan));
+        $tp->setValue('MASA_KERJA',    $s($user->masa_kerja));
+        $tp->setValue('UNIT_KERJA',    $s($user->unit_kerja));
+
+        // Checkbox jenis cuti
+        $jenisMap = [
+            'Cuti Tahunan'                    => 'CUTI_TAHUNAN',
+            'Cuti Besar'                      => 'CUTI_BESAR',
+            'Cuti Sakit'                      => 'CUTI_SAKIT',
+            'Cuti Melahirkan'                 => 'CUTI_MELAHIRKAN',
+            'Cuti Karena Alasan Penting'      => 'CUTI_KARENA_ALASAN_PENTING',
+            'Cuti di Luar Tanggungan Negara'  => 'CUTI_DI_LUAR_TANGGUNGAN_NEGARA',
+        ];
+
+        foreach ($jenisMap as $jenis => $placeholder) {
+            $tp->setValue($placeholder, $leave->jenis_cuti === $jenis ? 'X' : '');
+        }
+
+        // Detail cuti
+        $tp->setValue('ALASAN',         $s($leave->reason));
+        $tp->setValue('LAMA_HARI',      $leave->duration . ' hari');
+        $tp->setValue('TANGGAL_MULAI',  Carbon::parse($leave->start_date)->isoFormat('D MMMM YYYY'));
+        $tp->setValue('TANGGAL_SELESAI', Carbon::parse($leave->end_date)->isoFormat('D MMMM YYYY'));
+        $tp->setValue('SISA_N-2',       $s($user->sisa_cuti_n2));
+        $tp->setValue('SISA_N-1',       $s($user->sisa_cuti_n1));
+        $tp->setValue('N',              $s($user->sisa_cuti_n));
+        $tp->setValue('KETERANGAN',     '-');
+        $tp->setValue('ALAMAT',         $s($leave->address));
+        $tp->setValue('TELP',           $s($leave->phone));
+
+        // Status checkbox
+        $tp->setValue('DISETUJUI',      $leave->status === LeaveRequest::STATUS_APPROVED ? 'X' : '');
+        $tp->setValue('MENUNGGU',       $leave->status === LeaveRequest::STATUS_PENDING  ? 'X' : '');
+        $tp->setValue('TIDAK_DISETUJUI', $leave->status === LeaveRequest::STATUS_REJECTED ? 'X' : '');
+
+        return $tp;
+    }
+
+    /**
+     * Simpan file sementara ke storage/app/temp, return path.
+     */
+    private function saveTempFile(TemplateProcessor $processor, string $fileName): string
+    {
+        $tempDir = storage_path('app/temp');
+
+        if (!file_exists($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $path = $tempDir . '/' . $fileName;
+        $processor->saveAs($path);
+
+        if (!file_exists($path)) {
+            throw new \RuntimeException('File tidak berhasil dibuat');
+        }
+
+        Log::info('Generated surat cuti: ' . $path . ' (' . filesize($path) . ' bytes)');
+
+        return $path;
+    }
+
+    private function downloadHeaders(): array
+    {
+        return [
+            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'Cache-Control'       => 'no-cache, no-store, must-revalidate',
+            'Pragma'              => 'no-cache',
+            'Expires'             => '0',
+        ];
+    }
+
+    private function clearOutputBuffers(): void
+    {
+        while (ob_get_level()) {
+            ob_end_clean();
         }
     }
 }
