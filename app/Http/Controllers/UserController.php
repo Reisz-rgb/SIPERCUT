@@ -312,25 +312,25 @@ class UserController extends Controller
         ];
 
         foreach ($jenisMap as $jenis => $placeholder) {
-            $tp->setValue($placeholder, $leave->jenis_cuti === $jenis ? 'X' : '');
+            $tp->setValue($placeholder, $leave->jenis_cuti === $jenis ? 'X' : ' ');
         }
 
         // Detail cuti
-        $tp->setValue('ALASAN',         $s($leave->reason));
-        $tp->setValue('LAMA_HARI',      $leave->duration . ' hari');
-        $tp->setValue('TANGGAL_MULAI',  Carbon::parse($leave->start_date)->isoFormat('D MMMM YYYY'));
+        $tp->setValue('ALASAN',          $s($leave->reason));
+        $tp->setValue('LAMA_HARI',       $leave->duration . ' hari');
+        $tp->setValue('TANGGAL_MULAI',   Carbon::parse($leave->start_date)->isoFormat('D MMMM YYYY'));
         $tp->setValue('TANGGAL_SELESAI', Carbon::parse($leave->end_date)->isoFormat('D MMMM YYYY'));
-        $tp->setValue('SISA_N-2',       $s($user->sisa_cuti_n2));
-        $tp->setValue('SISA_N-1',       $s($user->sisa_cuti_n1));
-        $tp->setValue('N',              $s($user->sisa_cuti_n));
-        $tp->setValue('KETERANGAN',     '-');
-        $tp->setValue('ALAMAT',         $s($leave->address));
-        $tp->setValue('TELP',           $s($leave->phone));
+        $tp->setValue('SISA_N-2',        $s($user->sisa_cuti_n2));
+        $tp->setValue('SISA_N-1',        $s($user->sisa_cuti_n1));
+        $tp->setValue('N',               $s($user->sisa_cuti_n));
+        $tp->setValue('KETERANGAN',      '-');
+        $tp->setValue('ALAMAT',          $s($leave->address));
+        $tp->setValue('TELP',            $s($leave->phone));
 
         // Status checkbox
-        $tp->setValue('DISETUJUI',      $leave->status === LeaveRequest::STATUS_APPROVED ? 'X' : '');
-        $tp->setValue('MENUNGGU',       $leave->status === LeaveRequest::STATUS_PENDING  ? 'X' : '');
-        $tp->setValue('TIDAK_DISETUJUI', $leave->status === LeaveRequest::STATUS_REJECTED ? 'X' : '');
+        $tp->setValue('DISETUJUI',       $leave->status === LeaveRequest::STATUS_APPROVED ? 'X' : ' ');
+        $tp->setValue('MENUNGGU',        $leave->status === LeaveRequest::STATUS_PENDING  ? 'X' : ' ');
+        $tp->setValue('TIDAK_DISETUJUI', $leave->status === LeaveRequest::STATUS_REJECTED ? 'X' : ' ');
 
         return $tp;
     }
