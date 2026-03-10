@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 
 class LeaveRequest extends Model
 {
@@ -15,6 +15,8 @@ class LeaveRequest extends Model
     public const STATUS_PENDING  = 'pending';
     public const STATUS_APPROVED = 'approved';
     public const STATUS_REJECTED = 'rejected';
+
+    public const JENIS_TAHUNAN = 'Cuti Tahunan';
 
     protected $fillable = [
         'user_id',
@@ -40,12 +42,19 @@ class LeaveRequest extends Model
         'status' => self::STATUS_PENDING,
     ];
 
+    // =========================================================================
+    // RELATIONSHIPS
+    // =========================================================================
+
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    // Scopes
+    // =========================================================================
+    // QUERY SCOPES
+    // =========================================================================
+
     public function scopePending(Builder $query): Builder
     {
         return $query->where('status', self::STATUS_PENDING);
@@ -61,7 +70,15 @@ class LeaveRequest extends Model
         return $query->where('status', self::STATUS_REJECTED);
     }
 
-    // Helper methods
+    public function scopeForUser(Builder $query, int $userId): Builder
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    // =========================================================================
+    // HELPERS
+    // =========================================================================
+
     public function isPending(): bool
     {
         return $this->status === self::STATUS_PENDING;
@@ -76,16 +93,22 @@ class LeaveRequest extends Model
     {
         return $this->status === self::STATUS_REJECTED;
     }
-    
-    /**
-     * Get formatted status for display
-     */
+
+    public function isAnnualLeave(): bool
+    {
+        return $this->jenis_cuti === self::JENIS_TAHUNAN;
+    }
+
+    // =========================================================================
+    // ACCESSORS
+    // =========================================================================
+
     public function getStatusLabelAttribute(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             self::STATUS_APPROVED => 'Disetujui',
             self::STATUS_REJECTED => 'Ditolak',
-            default => 'Pending',
+            default               => 'Pending',
         };
     }
 }

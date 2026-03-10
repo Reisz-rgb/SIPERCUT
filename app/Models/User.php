@@ -23,9 +23,9 @@ class User extends Authenticatable
         'jabatan',
         'pendidikan',
         'usia',
-        'join_date',          // ← TAMBAHKAN
-        'status',             // ← TAMBAHKAN
-        'annual_leave_quota', // ← TAMBAHKAN
+        'join_date',
+        'status',
+        'annual_leave_quota',
     ];
 
     protected $hidden = [
@@ -37,25 +37,43 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'join_date' => 'date', // ← TAMBAHKAN
+            'password'          => 'hashed',
+            'join_date'         => 'date',
         ];
     }
 
-    // Relasi ke Cuti
+    // =========================================================================
+    // RELATIONSHIPS
+    // =========================================================================
+
+    /** Relasi legacy ke tabel cuti (model lama). */
     public function cuti()
     {
         return $this->hasMany(Cuti::class);
     }
 
-    // Helper method untuk cek role
-    public function isAdmin()
+    /** Relasi ke tabel leave_requests (model baru). */
+    public function leaveRequests()
+    {
+        return $this->hasMany(LeaveRequest::class);
+    }
+
+    /** Relasi ke saldo cuti per tahun. */
+    public function leaveBalances()
+    {
+        return $this->hasMany(LeaveBalance::class);
+    }
+
+    // =========================================================================
+    // HELPERS
+    // =========================================================================
+
+    public function isAdmin(): bool
     {
         return $this->role === 'admin';
     }
 
-    // Helper method untuk cek status
-    public function isActive()
+    public function isActive(): bool
     {
         return $this->status === 'aktif';
     }
