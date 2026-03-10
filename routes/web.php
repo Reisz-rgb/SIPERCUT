@@ -7,7 +7,7 @@ use App\Http\Controllers\PegawaiController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CutiController;
-    
+
 /*
 |--------------------------------------------------------------------------
 | PUBLIC AREA
@@ -29,7 +29,6 @@ Route::get('/hubungi-kami', function () {
 |--------------------------------------------------------------------------
 */
 
-// ✅ Tambah no.cache biar halaman login/register/reset tidak kecache (CSRF tidak basi)
 Route::middleware(['guest','no.cache'])->group(function () {
     // Login
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');

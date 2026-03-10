@@ -33,7 +33,7 @@
         </div>
 
         <div class="text-center text-gray-600 mb-10 text-sm">
-            <p>Link reset password telah dikirim ke nomor HP Anda.</p>
+            <p>Link reset password telah dikirim ke email Anda.</p>
         </div>
 
         <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 w-full max-w-xl relative">
@@ -44,8 +44,8 @@
                 <span class="text-gray-600">Tips:</span>
             </div>
             <ul class="list-disc list-outside ml-6 text-gray-500 space-y-4 text-sm leading-relaxed">
-                <li>Periksa pesan masuk di aplikasi SMS Anda.</li>
-                <li>Klik link yang ada di dalam SMS untuk reset password Anda.</li>
+                <li>Periksa pesan masuk di aplikasi email Anda.</li>
+                <li>Klik link yang ada di dalam email untuk reset password Anda.</li>
             </ul>
         </div>
 
