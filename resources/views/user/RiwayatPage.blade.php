@@ -152,13 +152,8 @@
 
                     <div class="space-y-2">
                         <label class="text-xs font-extrabold text-slate-600">Jenis Cuti</label>
-                        <select id="f_jenis" disabled class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
-                            <option>Cuti Tahunan</option>
-                            <option>Cuti Sakit</option>
-                            <option>Cuti Besar</option>
-                            <option>Cuti Melahirkan</option>
-                            <option>Cuti Karena Alasan Penting</option>
-                        </select>
+                        <input id="f_jenis" type="text" readonly 
+                        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700" />
                     </div>
 
                     <div class="space-y-2">
@@ -228,119 +223,170 @@
 @endsection
 
 @push('scripts')
-    <script>
-        // --- MODAL LOGIC (dipertahankan; hanya markup yang dirapikan) ---
-        const modal = document.getElementById("modal");
-        const closeBtn = document.getElementById("closeBtn");
-        const cancelBtn = document.getElementById("cancelBtn");
-        const modalTitle = document.getElementById("modalTitle");
-        const statusAlert = document.getElementById("statusAlert");
-        const dropArea = document.getElementById("drop-area");
-        const fileInput = document.getElementById("f_lampiran_input");
-        const fileNameDisplay = document.getElementById("file-name-display");
-        const dropTextLabel = document.getElementById("drop-text-label");
-        const btnEditLink = document.getElementById("btnEditLink");
-        const btnDownloadSurat = document.getElementById("btnDownloadSurat");
+<script>
+    const modal            = document.getElementById("modal");
+    const closeBtn         = document.getElementById("closeBtn");
+    const cancelBtn        = document.getElementById("cancelBtn");
+    const modalTitle       = document.getElementById("modalTitle");
+    const statusAlert      = document.getElementById("statusAlert");
+    const dropArea         = document.getElementById("drop-area");
+    const fileInput        = document.getElementById("f_lampiran_input");
+    const fileNameDisplay  = document.getElementById("file-name-display");
+    const dropTextLabel    = document.getElementById("drop-text-label");
+    const btnEditLink      = document.getElementById("btnEditLink");
+    const btnDownloadSurat = document.getElementById("btnDownloadSurat");
 
-        const f = {
-            id: document.getElementById("f_id"),
-            status: document.getElementById("f_status"),
-            jenis: document.getElementById("f_jenis"),
-            lampiranText: document.getElementById("f_lampiran_text"),
-            mulai: document.getElementById("f_mulai"),
-            selesai: document.getElementById("f_selesai"),
-            alamat: document.getElementById("f_alamat"),
-            kontak: document.getElementById("f_kontak"),
-            alasan: document.getElementById("f_alasan"),
-            catatan: document.getElementById("f_catatan")
-        };
+    // Cegah klik di dalam konten modal bubble ke overlay (yang akan menutup modal)
+    const modalContent = modal ? modal.querySelector('.w-full.max-w-3xl') : null;
+    if (modalContent) {
+        modalContent.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    }
 
-        let activeBtn = null;
-        let activeData = null;
+    const f = {
+        id:           document.getElementById("f_id"),
+        status:       document.getElementById("f_status"),
+        jenis:        document.getElementById("f_jenis"),
+        lampiranText: document.getElementById("f_lampiran_text"),
+        mulai:        document.getElementById("f_mulai"),
+        selesai:      document.getElementById("f_selesai"),
+        alamat:       document.getElementById("f_alamat"),
+        kontak:       document.getElementById("f_kontak"),
+        alasan:       document.getElementById("f_alasan"),
+        catatan:      document.getElementById("f_catatan")
+    };
 
-        function openModal(btn){
-            activeBtn = btn;
-            activeData = JSON.parse(btn.getAttribute("data-leave") || "{}");
+    let activeBtn  = null;
+    let activeData = null;
 
-            f.id.value = activeData.id || "";
-            f.status.value = activeData.status || "";
-            f.jenis.value = activeData.jenis || "Cuti Tahunan";
-            f.lampiranText.value = activeData.lampiran || "";
-            f.mulai.value = activeData.mulai || "";
-            f.selesai.value = activeData.selesai || "";
-            f.alamat.value = activeData.alamat || "";
-            f.kontak.value = activeData.kontak || "";
-            f.alasan.value = activeData.alasan || "";
-            f.catatan.value = activeData.catatan || "";
-            fileInput.value = "";
+    function openModal(btn) {
+        activeBtn  = btn;
+        activeData = JSON.parse(btn.getAttribute("data-leave") || "{}");
 
-            if(activeData.lampiran && activeData.lampiran !== "-"){
-                fileNameDisplay.innerHTML = `📎 ${activeData.lampiran}`;
-                dropTextLabel.textContent = "File saat ini:";
-            } else {
-                fileNameDisplay.innerHTML = "";
-                dropTextLabel.textContent = "Tidak ada lampiran.";
-            }
+        f.id.value           = activeData.id       || "";
+        f.status.value       = activeData.status   || "";
+        f.jenis.value        = activeData.jenis    || "";
+        f.lampiranText.value = activeData.lampiran || "";
+        f.mulai.value        = activeData.mulai    || "";
+        f.selesai.value      = activeData.selesai  || "";
+        f.alamat.value       = activeData.alamat   || "";
+        f.kontak.value       = activeData.kontak   || "";
+        f.alasan.value       = activeData.alasan   || "";
+        f.catatan.value      = activeData.catatan  || "";
+        fileInput.value      = "";
 
-            configureViewMode(activeData.status);
-            modal.classList.add("open");
-            document.body.style.overflow = "hidden";
+        if (activeData.lampiran && activeData.lampiran !== "-") {
+            fileNameDisplay.innerHTML = `📎 ${activeData.lampiran}`;
+            dropTextLabel.textContent = "File saat ini:";
+        } else {
+            fileNameDisplay.innerHTML = "";
+            dropTextLabel.textContent = "Tidak ada lampiran.";
         }
 
-        function configureViewMode(status) {
-            const inputs = [f.jenis, f.mulai, f.selesai, f.alamat, f.kontak, f.alasan];
-            inputs.forEach(inp => inp.disabled = true);
-            dropArea.classList.add('disabled');
-            fileInput.disabled = true;
+        configureViewMode(activeData.status);
+        modal.classList.add("open");
+        document.body.style.overflow = "hidden";
+    }
 
-            btnEditLink.style.display = 'none';
-            btnDownloadSurat.style.display = 'none';
-            statusAlert.classList.add('hidden');
+    function configureViewMode(status) {
+        // Reset semua field ke readonly
+        [f.mulai, f.selesai, f.alamat, f.kontak, f.alasan].forEach(el => {
+            el.disabled = true;
+        });
 
-            if (status === "Ditolak") {
-                modalTitle.textContent = "Detail Pengajuan (Ditolak)";
-                f.status.style.color = "#b42318";
-                statusAlert.classList.remove('hidden');
-                statusAlert.style.background = "#fde9ea";
-                statusAlert.style.color = "#b42318";
-                statusAlert.textContent = "Pengajuan ini ditolak. Silakan perbaiki data.";
-                btnEditLink.style.display = 'inline-flex';
-            } else if(status === "Diterima") {
-                modalTitle.textContent = "Detail Pengajuan";
-                f.status.style.color = "#1f7a46";
-                statusAlert.classList.remove('hidden');
-                statusAlert.style.background = "#e8f6ee";
-                statusAlert.style.color = "#1f7a46";
-                statusAlert.textContent = "Pengajuan ini telah disetujui.";
+        if (dropArea)  dropArea.classList.add('disabled');
+        if (fileInput) fileInput.disabled = true;
+
+        // Reset tombol aksi
+        btnEditLink.style.display      = 'none';
+        btnDownloadSurat.style.display = 'none';
+
+        // Reset download button state (kalau sebelumnya loading)
+        btnDownloadSurat.innerHTML = '<i class="bi bi-download"></i> Download Surat';
+        btnDownloadSurat.disabled  = false;
+
+        statusAlert.classList.add('hidden');
+
+        if (status === "Ditolak") {
+            modalTitle.textContent = "Detail Pengajuan (Ditolak)";
+            f.status.style.color   = "#b42318";
+            showAlert("#fde9ea", "#b42318", "Pengajuan ini ditolak. Silakan perbaiki data.");
+            btnEditLink.style.display = 'inline-flex';
+
+        } else if (status === "Diterima") {
+            modalTitle.textContent = "Detail Pengajuan";
+            f.status.style.color   = "#1f7a46";
+            showAlert("#e8f6ee", "#1f7a46", "Pengajuan ini telah disetujui.");
+
+            // Bangun URL download dari template
+            const leaveId = activeData.leaveId
+                ?? activeBtn?.closest('.h-card')?.getAttribute('data-leave-id');
+
+            if (leaveId) {
+                const tpl = btnDownloadSurat.dataset.downloadUrlTemplate || '';
+                const url = tpl
+                    ? tpl.replace('__ID__', leaveId)
+                    : `/user/cuti/${leaveId}/download`;
+
                 btnDownloadSurat.style.display = 'inline-flex';
-                // Set URL download dengan ID (hindari pakai variable Blade $leave di halaman list)
-                const leaveId = activeData.leaveId || activeBtn.closest('.h-card').getAttribute('data-leave-id');
-                if (leaveId) {
-                    const tpl = btnDownloadSurat.dataset.downloadUrlTemplate;
-                    btnDownloadSurat.href = tpl ? tpl.replace('__ID__', leaveId) : `/user/cuti/${leaveId}/download`;
-                }
-            } else {
-                modalTitle.textContent = "Detail Pengajuan";
-                f.status.style.color = "#a56a00";
-                statusAlert.classList.remove('hidden');
-                statusAlert.style.background = "#fff2df";
-                statusAlert.style.color = "#a56a00";
-                statusAlert.textContent = "Pengajuan sedang dalam proses verifikasi.";
+
+                // Simpan URL di dataset tombol — listener sudah dipasang sekali di bawah
+                btnDownloadSurat.dataset.currentUrl = url;
             }
-        }
 
-        function closeModal(){
-            modal.classList.remove("open");
-            document.body.style.overflow = "";
+        } else {
+            // pending
+            modalTitle.textContent = "Detail Pengajuan";
+            f.status.style.color   = "#a56a00";
+            showAlert("#fff2df", "#a56a00", "Pengajuan sedang dalam proses verifikasi.");
         }
+    }
 
-        closeBtn.addEventListener("click", closeModal);
-        cancelBtn.addEventListener("click", closeModal);
+    function showAlert(bg, color, text) {
+        statusAlert.classList.remove('hidden');
+        statusAlert.style.background = bg;
+        statusAlert.style.color      = color;
+        statusAlert.textContent      = text;
+    }
 
-        window.onclick = function(event) {
-            if (event.target === modal) {
-                closeModal();
-            }
-        }
-    </script>
+    // ── Pasang listener download SEKALI saja (tidak pakai cloneNode) ──
+    if (btnDownloadSurat) {
+        btnDownloadSurat.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const url = btnDownloadSurat.dataset.currentUrl;
+            if (!url) return;
+
+            // Loading state
+            btnDownloadSurat.innerHTML = '<i class="bi bi-hourglass-split"></i> Menyiapkan...';
+            btnDownloadSurat.disabled  = true;
+
+            // Buka di tab baru → file terdownload, modal TIDAK tertutup
+            window.open(url, '_blank');
+
+            // Reset tombol setelah 3 detik
+            setTimeout(function() {
+                btnDownloadSurat.innerHTML = '<i class="bi bi-download"></i> Download Surat';
+                btnDownloadSurat.disabled  = false;
+            }, 3000);
+        });
+    }
+
+    function closeModal() {
+        modal.classList.remove("open");
+        document.body.style.overflow = "";
+    }
+
+    if (closeBtn)  closeBtn.addEventListener("click",  closeModal);
+    if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
+
+    // Tutup modal hanya kalau klik tepat di overlay hitam
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeModal();
+        });
+    }
+</script>
 @endpush

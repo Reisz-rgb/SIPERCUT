@@ -77,14 +77,95 @@
                 </div>
             </section>
 
-            {{-- II. JENIS CUTI --}}
+            {{-- II. ATASAN LANGSUNG --}}
+            <section class="bg-white rounded-3xl shadow-soft border border-slate-100 overflow-hidden">
+                <div class="px-6 md:px-8 py-5 border-b border-slate-50 flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[var(--maroon)]">
+                            <i class="bi bi-person-check-fill"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm md:text-base font-extrabold text-slate-800">II. Atasan Langsung</h3>
+                            <p class="text-xs md:text-sm text-slate-500 font-medium">Pilih atasan yang akan menyetujui cuti Anda.</p>
+                        </div>
+                    </div>
+                    <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-400">Wajib</span>
+                </div>
+
+                <div class="p-6 md:p-8 space-y-4">
+                    <div>
+                        <label class="block text-xs font-extrabold text-slate-600 mb-2">
+                            Nama Atasan <span class="text-red-600">*</span>
+                        </label>
+
+                        {{-- Custom select wrapper --}}
+                        <div class="relative">
+                            <select
+                                name="supervisor_id"
+                                id="supervisor_select"
+                                required
+                                class="w-full appearance-none px-4 py-3 pr-10 rounded-2xl border
+                                       {{ $errors->has('supervisor_id') ? 'border-red-400 bg-red-50' : 'border-slate-200 bg-white' }}
+                                       text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)] cursor-pointer"
+                            >
+                                <option value="" disabled {{ old('supervisor_id') ? '' : 'selected' }}>
+                                    — Pilih atasan langsung —
+                                </option>
+
+                                @foreach ($supervisors as $unitKerja => $group)
+                                    <optgroup label="{{ $unitKerja }}">
+                                        @foreach ($group as $supervisor)
+                                            <option
+                                                value="{{ $supervisor->id }}"
+                                                data-jabatan="{{ $supervisor->jabatan }}"
+                                                data-unit="{{ $supervisor->unit_kerja }}"
+                                                data-nip="{{ $supervisor->nip }}"
+                                                {{ old('supervisor_id') == $supervisor->id ? 'selected' : '' }}
+                                            >
+                                                {{ $supervisor->nama }}
+                                            </option>
+                                        @endforeach
+                                    </optgroup>
+                                @endforeach
+                            </select>
+
+                            {{-- Chevron icon --}}
+                            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400">
+                                <i class="bi bi-chevron-down text-sm"></i>
+                            </div>
+                        </div>
+
+                        @error('supervisor_id')
+                            <p class="text-xs text-red-600 font-semibold mt-1">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    {{-- Info card: muncul setelah memilih atasan --}}
+                    <div id="supervisor_info" class="hidden rounded-2xl border border-slate-100 bg-slate-50/60 p-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">NIP</p>
+                            <p id="info_nip" class="text-sm font-extrabold text-slate-700">—</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Jabatan</p>
+                            <p id="info_jabatan" class="text-sm font-extrabold text-slate-700">—</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Unit Kerja</p>
+                            <p id="info_unit" class="text-sm font-extrabold text-slate-700">—</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {{-- III. JENIS CUTI --}}
             <section class="bg-white rounded-3xl shadow-soft border border-slate-100 overflow-hidden">
                 <div class="px-6 md:px-8 py-5 border-b border-slate-50 flex items-center gap-3">
                     <div class="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[var(--maroon)]">
                         <i class="bi bi-ui-radios"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm md:text-base font-extrabold text-slate-800">II. Jenis Cuti yang Diambil</h3>
+                        <h3 class="text-sm md:text-base font-extrabold text-slate-800">III. Jenis Cuti yang Diambil</h3>
                         <p class="text-xs md:text-sm text-slate-500 font-medium">Pilih salah satu jenis cuti.</p>
                     </div>
                 </div>
@@ -92,12 +173,12 @@
                 <div class="p-6 md:p-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     @php($jenisOld = old('jenis_cuti', 'Cuti Tahunan'))
                     @foreach([
-                        'Cuti Tahunan' => 'Cuti Tahunan',
-                        'Cuti Besar' => 'Cuti Besar',
-                        'Cuti Sakit' => 'Cuti Sakit',
-                        'Cuti Melahirkan' => 'Cuti Melahirkan',
+                        'Cuti Tahunan'        => 'Cuti Tahunan',
+                        'Cuti Besar'          => 'Cuti Besar',
+                        'Cuti Sakit'          => 'Cuti Sakit',
+                        'Cuti Melahirkan'     => 'Cuti Melahirkan',
                         'Cuti Alasan Penting' => 'Cuti Karena Alasan Penting',
-                        'Cuti Luar Tanggungan' => 'Cuti di Luar Tanggungan Negara',
+                        'Cuti Luar Tanggungan'=> 'Cuti di Luar Tanggungan Negara',
                     ] as $value => $label)
                         <label class="flex items-center gap-3 p-4 rounded-2xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
                             <input type="radio" name="jenis_cuti" value="{{ $value }}" class="h-4 w-4 text-[var(--maroon)]" {{ $jenisOld === $value ? 'checked' : '' }}>
@@ -110,14 +191,14 @@
                 </div>
             </section>
 
-            {{-- III. ALASAN CUTI --}}
+            {{-- IV. ALASAN CUTI --}}
             <section class="bg-white rounded-3xl shadow-soft border border-slate-100 overflow-hidden">
                 <div class="px-6 md:px-8 py-5 border-b border-slate-50 flex items-center gap-3">
                     <div class="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[var(--maroon)]">
                         <i class="bi bi-chat-left-text-fill"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm md:text-base font-extrabold text-slate-800">III. Alasan Cuti</h3>
+                        <h3 class="text-sm md:text-base font-extrabold text-slate-800">IV. Alasan Cuti</h3>
                         <p class="text-xs md:text-sm text-slate-500 font-medium">Minimal 20 karakter agar mudah diverifikasi.</p>
                     </div>
                 </div>
@@ -131,14 +212,14 @@
                 </div>
             </section>
 
-            {{-- IV. LAMA CUTI --}}
+            {{-- V. LAMA CUTI --}}
             <section class="bg-white rounded-3xl shadow-soft border border-slate-100 overflow-hidden">
                 <div class="px-6 md:px-8 py-5 border-b border-slate-50 flex items-center gap-3">
                     <div class="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[var(--maroon)]">
                         <i class="bi bi-calendar2-week-fill"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm md:text-base font-extrabold text-slate-800">IV. Lamanya Cuti</h3>
+                        <h3 class="text-sm md:text-base font-extrabold text-slate-800">V. Lamanya Cuti</h3>
                         <p class="text-xs md:text-sm text-slate-500 font-medium">Isi lama hari dan rentang tanggal cuti.</p>
                     </div>
                 </div>
@@ -163,14 +244,14 @@
                 </div>
             </section>
 
-            {{-- V. CATATAN CUTI --}}
+            {{-- VI. CATATAN CUTI --}}
             <section class="bg-white rounded-3xl shadow-soft border border-slate-100 overflow-hidden">
                 <div class="px-6 md:px-8 py-5 border-b border-slate-50 flex items-center gap-3">
                     <div class="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[var(--maroon)]">
                         <i class="bi bi-table"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm md:text-base font-extrabold text-slate-800">V. Catatan Cuti</h3>
+                        <h3 class="text-sm md:text-base font-extrabold text-slate-800">VI. Catatan Cuti</h3>
                         <p class="text-xs md:text-sm text-slate-500 font-medium">Ringkasan sisa cuti berdasarkan tahun.</p>
                     </div>
                 </div>
@@ -210,14 +291,14 @@
                 </div>
             </section>
 
-            {{-- VI. ALAMAT CUTI --}}
+            {{-- VII. ALAMAT CUTI --}}
             <section class="bg-white rounded-3xl shadow-soft border border-slate-100 overflow-hidden">
                 <div class="px-6 md:px-8 py-5 border-b border-slate-50 flex items-center gap-3">
                     <div class="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[var(--maroon)]">
                         <i class="bi bi-geo-alt-fill"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm md:text-base font-extrabold text-slate-800">VI. Alamat Selama Menjalankan Cuti</h3>
+                        <h3 class="text-sm md:text-base font-extrabold text-slate-800">VII. Alamat Selama Menjalankan Cuti</h3>
                         <p class="text-xs md:text-sm text-slate-500 font-medium">Isi alamat dan kontak yang bisa dihubungi.</p>
                     </div>
                 </div>
@@ -235,14 +316,14 @@
                 </div>
             </section>
 
-            {{-- VII. DOKUMEN PENDUKUNG --}}
+            {{-- VIII. DOKUMEN PENDUKUNG --}}
             <section class="bg-white rounded-3xl shadow-soft border border-slate-100 overflow-hidden">
                 <div class="px-6 md:px-8 py-5 border-b border-slate-50 flex items-center gap-3">
                     <div class="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-[var(--maroon)]">
                         <i class="bi bi-paperclip"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm md:text-base font-extrabold text-slate-800">VII. Dokumen Pendukung (Opsional)</h3>
+                        <h3 class="text-sm md:text-base font-extrabold text-slate-800">VIII. Dokumen Pendukung (Opsional)</h3>
                         <p class="text-xs md:text-sm text-slate-500 font-medium">Unggah lampiran jika diperlukan (surat dokter, dsb).</p>
                     </div>
                 </div>
@@ -289,31 +370,61 @@
 @endsection
 
 @push('scripts')
-    <script>
-        const fileInput = document.getElementById('fileUpload');
-        const uploadText = document.getElementById('uploadText');
-        const uploadHint = document.getElementById('uploadHint');
-        const uploadIcon = document.getElementById('uploadIcon');
-        const dropZone = document.getElementById('dropZone');
+<script>
+    // -------------------------------------------------------------------------
+    // File upload preview
+    // -------------------------------------------------------------------------
+    const fileInput = document.getElementById('fileUpload');
+    const uploadText = document.getElementById('uploadText');
+    const uploadHint = document.getElementById('uploadHint');
+    const uploadIcon = document.getElementById('uploadIcon');
+    const dropZone   = document.getElementById('dropZone');
 
-        if (fileInput) {
-            fileInput.addEventListener('change', function() {
-                if (this.files && this.files[0]) {
-                    const file = this.files[0];
+    if (fileInput) {
+        fileInput.addEventListener('change', function () {
+            if (this.files && this.files[0]) {
+                const file = this.files[0];
+                uploadText.innerText = 'File Siap Diupload!';
+                uploadText.classList.add('text-emerald-700');
+                uploadHint.innerHTML = `<strong>Berhasil memilih:</strong> ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                uploadHint.classList.add('text-emerald-700');
+                uploadIcon.innerHTML = '<i class="bi bi-check-circle-fill text-2xl text-emerald-600"></i>';
+                dropZone.classList.replace('border-slate-200', 'border-emerald-300');
+                dropZone.classList.add('bg-emerald-50/40');
+            }
+        });
+    }
 
-                    // Ubah tampilan menjadi mode "File Terpilih" (logika tetap)
-                    uploadText.innerText = "File Siap Diupload!";
-                    uploadText.classList.add('text-emerald-700');
+    // -------------------------------------------------------------------------
+    // Supervisor info card
+    // -------------------------------------------------------------------------
+    const supervisorSelect = document.getElementById('supervisor_select');
+    const supervisorInfo   = document.getElementById('supervisor_info');
+    const infoNip          = document.getElementById('info_nip');
+    const infoJabatan      = document.getElementById('info_jabatan');
+    const infoUnit         = document.getElementById('info_unit');
 
-                    uploadHint.innerHTML = `<strong>Berhasil memilih:</strong> ${file.name} (${(file.size/1024).toFixed(1)} KB)`;
-                    uploadHint.classList.add('text-emerald-700');
+    function updateSupervisorInfo() {
+        const selected = supervisorSelect.options[supervisorSelect.selectedIndex];
 
-                    uploadIcon.innerHTML = '<i class="bi bi-check-circle-fill text-2xl text-emerald-600"></i>';
-                    dropZone.classList.remove('border-slate-200');
-                    dropZone.classList.add('border-emerald-300');
-                    dropZone.classList.add('bg-emerald-50/40');
-                }
-            });
+        if (!selected || !selected.value) {
+            supervisorInfo.classList.add('hidden');
+            return;
         }
-    </script>
+
+        infoNip.textContent     = selected.dataset.nip     || '—';
+        infoJabatan.textContent = selected.dataset.jabatan || '—';
+        infoUnit.textContent    = selected.dataset.unit    || '—';
+        supervisorInfo.classList.remove('hidden');
+    }
+
+    if (supervisorSelect) {
+        supervisorSelect.addEventListener('change', updateSupervisorInfo);
+
+        // Tampilkan info card langsung jika ada nilai lama (old input setelah error)
+        if (supervisorSelect.value) {
+            updateSupervisorInfo();
+        }
+    }
+</script>
 @endpush
