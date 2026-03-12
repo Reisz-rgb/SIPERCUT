@@ -54,6 +54,8 @@
             'selesai' => optional($leave->end_date)->format('Y-m-d'),
             'alamat' => $leave->address ?? '-',
             'kontak' => $leave->phone ?? '-',
+            'kontakDarurat' => $leave->emergency_phone ?? '-',
+            'hubunganDarurat' => $leave->emergency_relationship ?? '-',
             'alasan' => $leave->reason,
             'lampiran' => $leave->file_path ? basename($leave->file_path) : '-',
             'catatan' => $leave->rejection_reason ?? '-',
@@ -152,8 +154,13 @@
 
                     <div class="space-y-2">
                         <label class="text-xs font-extrabold text-slate-600">Jenis Cuti</label>
-                        <input id="f_jenis" type="text" readonly 
-                        class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700" />
+                        <select id="f_jenis" disabled class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+                            <option>Cuti Tahunan</option>
+                            <option>Cuti Sakit</option>
+                            <option>Cuti Besar</option>
+                            <option>Cuti Melahirkan</option>
+                            <option>Cuti Karena Alasan Penting</option>
+                        </select>
                     </div>
 
                     <div class="space-y-2">
@@ -187,6 +194,14 @@
                     <div class="space-y-2">
                         <label class="text-xs font-extrabold text-slate-600">No. Kontak</label>
                         <input id="f_kontak" type="text" readonly class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" />
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-extrabold text-slate-600">No. Kontak Darurat</label>
+                        <input id="f_kontak_darurat" type="text" readonly class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" />
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-extrabold text-slate-600">Hubungan dengan yang Bersangkutan</label>
+                        <input id="f_hubungan_darurat" type="text" readonly class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" />
                     </div>
 
                     <div class="space-y-2 md:col-span-2">
@@ -223,170 +238,123 @@
 @endsection
 
 @push('scripts')
-<script>
-    const modal            = document.getElementById("modal");
-    const closeBtn         = document.getElementById("closeBtn");
-    const cancelBtn        = document.getElementById("cancelBtn");
-    const modalTitle       = document.getElementById("modalTitle");
-    const statusAlert      = document.getElementById("statusAlert");
-    const dropArea         = document.getElementById("drop-area");
-    const fileInput        = document.getElementById("f_lampiran_input");
-    const fileNameDisplay  = document.getElementById("file-name-display");
-    const dropTextLabel    = document.getElementById("drop-text-label");
-    const btnEditLink      = document.getElementById("btnEditLink");
-    const btnDownloadSurat = document.getElementById("btnDownloadSurat");
+    <script>
+        // --- MODAL LOGIC (dipertahankan; hanya markup yang dirapikan) ---
+        const modal = document.getElementById("modal");
+        const closeBtn = document.getElementById("closeBtn");
+        const cancelBtn = document.getElementById("cancelBtn");
+        const modalTitle = document.getElementById("modalTitle");
+        const statusAlert = document.getElementById("statusAlert");
+        const dropArea = document.getElementById("drop-area");
+        const fileInput = document.getElementById("f_lampiran_input");
+        const fileNameDisplay = document.getElementById("file-name-display");
+        const dropTextLabel = document.getElementById("drop-text-label");
+        const btnEditLink = document.getElementById("btnEditLink");
+        const btnDownloadSurat = document.getElementById("btnDownloadSurat");
 
-    // Cegah klik di dalam konten modal bubble ke overlay (yang akan menutup modal)
-    const modalContent = modal ? modal.querySelector('.w-full.max-w-3xl') : null;
-    if (modalContent) {
-        modalContent.addEventListener('click', function(e) {
-            e.stopPropagation();
-        });
-    }
+        const f = {
+            id: document.getElementById("f_id"),
+            status: document.getElementById("f_status"),
+            jenis: document.getElementById("f_jenis"),
+            lampiranText: document.getElementById("f_lampiran_text"),
+            mulai: document.getElementById("f_mulai"),
+            selesai: document.getElementById("f_selesai"),
+            alamat: document.getElementById("f_alamat"),
+            kontak: document.getElementById("f_kontak"),
+            kontakDarurat: document.getElementById("f_kontak_darurat"),
+            hubunganDarurat: document.getElementById("f_hubungan_darurat"),
+            alasan: document.getElementById("f_alasan"),
+            catatan: document.getElementById("f_catatan")
+        };
 
-    const f = {
-        id:           document.getElementById("f_id"),
-        status:       document.getElementById("f_status"),
-        jenis:        document.getElementById("f_jenis"),
-        lampiranText: document.getElementById("f_lampiran_text"),
-        mulai:        document.getElementById("f_mulai"),
-        selesai:      document.getElementById("f_selesai"),
-        alamat:       document.getElementById("f_alamat"),
-        kontak:       document.getElementById("f_kontak"),
-        alasan:       document.getElementById("f_alasan"),
-        catatan:      document.getElementById("f_catatan")
-    };
+        let activeBtn = null;
+        let activeData = null;
 
-    let activeBtn  = null;
-    let activeData = null;
+        function openModal(btn){
+            activeBtn = btn;
+            activeData = JSON.parse(btn.getAttribute("data-leave") || "{}");
 
-    function openModal(btn) {
-        activeBtn  = btn;
-        activeData = JSON.parse(btn.getAttribute("data-leave") || "{}");
+            f.id.value = activeData.id || "";
+            f.status.value = activeData.status || "";
+            f.jenis.value = activeData.jenis || "Cuti Tahunan";
+            f.lampiranText.value = activeData.lampiran || "";
+            f.mulai.value = activeData.mulai || "";
+            f.selesai.value = activeData.selesai || "";
+            f.alamat.value = activeData.alamat || "";
+            f.kontak.value = activeData.kontak || "";
+            f.kontakDarurat.value = activeData.kontakDarurat || "";
+            f.hubunganDarurat.value = activeData.hubunganDarurat || "";
+            f.alasan.value = activeData.alasan || "";
+            f.catatan.value = activeData.catatan || "";
+            fileInput.value = "";
 
-        f.id.value           = activeData.id       || "";
-        f.status.value       = activeData.status   || "";
-        f.jenis.value        = activeData.jenis    || "";
-        f.lampiranText.value = activeData.lampiran || "";
-        f.mulai.value        = activeData.mulai    || "";
-        f.selesai.value      = activeData.selesai  || "";
-        f.alamat.value       = activeData.alamat   || "";
-        f.kontak.value       = activeData.kontak   || "";
-        f.alasan.value       = activeData.alasan   || "";
-        f.catatan.value      = activeData.catatan  || "";
-        fileInput.value      = "";
-
-        if (activeData.lampiran && activeData.lampiran !== "-") {
-            fileNameDisplay.innerHTML = `📎 ${activeData.lampiran}`;
-            dropTextLabel.textContent = "File saat ini:";
-        } else {
-            fileNameDisplay.innerHTML = "";
-            dropTextLabel.textContent = "Tidak ada lampiran.";
-        }
-
-        configureViewMode(activeData.status);
-        modal.classList.add("open");
-        document.body.style.overflow = "hidden";
-    }
-
-    function configureViewMode(status) {
-        // Reset semua field ke readonly
-        [f.mulai, f.selesai, f.alamat, f.kontak, f.alasan].forEach(el => {
-            el.disabled = true;
-        });
-
-        if (dropArea)  dropArea.classList.add('disabled');
-        if (fileInput) fileInput.disabled = true;
-
-        // Reset tombol aksi
-        btnEditLink.style.display      = 'none';
-        btnDownloadSurat.style.display = 'none';
-
-        // Reset download button state (kalau sebelumnya loading)
-        btnDownloadSurat.innerHTML = '<i class="bi bi-download"></i> Download Surat';
-        btnDownloadSurat.disabled  = false;
-
-        statusAlert.classList.add('hidden');
-
-        if (status === "Ditolak") {
-            modalTitle.textContent = "Detail Pengajuan (Ditolak)";
-            f.status.style.color   = "#b42318";
-            showAlert("#fde9ea", "#b42318", "Pengajuan ini ditolak. Silakan perbaiki data.");
-            btnEditLink.style.display = 'inline-flex';
-
-        } else if (status === "Diterima") {
-            modalTitle.textContent = "Detail Pengajuan";
-            f.status.style.color   = "#1f7a46";
-            showAlert("#e8f6ee", "#1f7a46", "Pengajuan ini telah disetujui.");
-
-            // Bangun URL download dari template
-            const leaveId = activeData.leaveId
-                ?? activeBtn?.closest('.h-card')?.getAttribute('data-leave-id');
-
-            if (leaveId) {
-                const tpl = btnDownloadSurat.dataset.downloadUrlTemplate || '';
-                const url = tpl
-                    ? tpl.replace('__ID__', leaveId)
-                    : `/user/cuti/${leaveId}/download`;
-
-                btnDownloadSurat.style.display = 'inline-flex';
-
-                // Simpan URL di dataset tombol — listener sudah dipasang sekali di bawah
-                btnDownloadSurat.dataset.currentUrl = url;
+            if(activeData.lampiran && activeData.lampiran !== "-"){
+                fileNameDisplay.innerHTML = `📎 ${activeData.lampiran}`;
+                dropTextLabel.textContent = "File saat ini:";
+            } else {
+                fileNameDisplay.innerHTML = "";
+                dropTextLabel.textContent = "Tidak ada lampiran.";
             }
 
-        } else {
-            // pending
-            modalTitle.textContent = "Detail Pengajuan";
-            f.status.style.color   = "#a56a00";
-            showAlert("#fff2df", "#a56a00", "Pengajuan sedang dalam proses verifikasi.");
+            configureViewMode(activeData.status);
+            modal.classList.add("open");
+            document.body.style.overflow = "hidden";
         }
-    }
 
-    function showAlert(bg, color, text) {
-        statusAlert.classList.remove('hidden');
-        statusAlert.style.background = bg;
-        statusAlert.style.color      = color;
-        statusAlert.textContent      = text;
-    }
+        function configureViewMode(status) {
+            const inputs = [f.jenis, f.mulai, f.selesai, f.alamat, f.kontak, f.kontakDarurat, f.hubunganDarurat, f.alasan];
+            inputs.forEach(inp => inp.disabled = true);
+            dropArea.classList.add('disabled');
+            fileInput.disabled = true;
 
-    // ── Pasang listener download SEKALI saja (tidak pakai cloneNode) ──
-    if (btnDownloadSurat) {
-        btnDownloadSurat.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
+            btnEditLink.style.display = 'none';
+            btnDownloadSurat.style.display = 'none';
+            statusAlert.classList.add('hidden');
 
-            const url = btnDownloadSurat.dataset.currentUrl;
-            if (!url) return;
+            if (status === "Ditolak") {
+                modalTitle.textContent = "Detail Pengajuan (Ditolak)";
+                f.status.style.color = "#b42318";
+                statusAlert.classList.remove('hidden');
+                statusAlert.style.background = "#fde9ea";
+                statusAlert.style.color = "#b42318";
+                statusAlert.textContent = "Pengajuan ini ditolak. Silakan perbaiki data.";
+                btnEditLink.style.display = 'inline-flex';
+            } else if(status === "Diterima") {
+                modalTitle.textContent = "Detail Pengajuan";
+                f.status.style.color = "#1f7a46";
+                statusAlert.classList.remove('hidden');
+                statusAlert.style.background = "#e8f6ee";
+                statusAlert.style.color = "#1f7a46";
+                statusAlert.textContent = "Pengajuan ini telah disetujui.";
+                btnDownloadSurat.style.display = 'inline-flex';
+                // Set URL download dengan ID (hindari pakai variable Blade $leave di halaman list)
+                const leaveId = activeData.leaveId || activeBtn.closest('.h-card').getAttribute('data-leave-id');
+                if (leaveId) {
+                    const tpl = btnDownloadSurat.dataset.downloadUrlTemplate;
+                    btnDownloadSurat.href = tpl ? tpl.replace('__ID__', leaveId) : `/user/cuti/${leaveId}/download`;
+                }
+            } else {
+                modalTitle.textContent = "Detail Pengajuan";
+                f.status.style.color = "#a56a00";
+                statusAlert.classList.remove('hidden');
+                statusAlert.style.background = "#fff2df";
+                statusAlert.style.color = "#a56a00";
+                statusAlert.textContent = "Pengajuan sedang dalam proses verifikasi.";
+            }
+        }
 
-            // Loading state
-            btnDownloadSurat.innerHTML = '<i class="bi bi-hourglass-split"></i> Menyiapkan...';
-            btnDownloadSurat.disabled  = true;
+        function closeModal(){
+            modal.classList.remove("open");
+            document.body.style.overflow = "";
+        }
 
-            // Buka di tab baru → file terdownload, modal TIDAK tertutup
-            window.open(url, '_blank');
+        closeBtn.addEventListener("click", closeModal);
+        cancelBtn.addEventListener("click", closeModal);
 
-            // Reset tombol setelah 3 detik
-            setTimeout(function() {
-                btnDownloadSurat.innerHTML = '<i class="bi bi-download"></i> Download Surat';
-                btnDownloadSurat.disabled  = false;
-            }, 3000);
-        });
-    }
-
-    function closeModal() {
-        modal.classList.remove("open");
-        document.body.style.overflow = "";
-    }
-
-    if (closeBtn)  closeBtn.addEventListener("click",  closeModal);
-    if (cancelBtn) cancelBtn.addEventListener("click", closeModal);
-
-    // Tutup modal hanya kalau klik tepat di overlay hitam
-    if (modal) {
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) closeModal();
-        });
-    }
-</script>
+        window.onclick = function(event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
 @endpush

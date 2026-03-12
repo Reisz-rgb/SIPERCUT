@@ -308,11 +308,23 @@
                         <label class="block text-xs font-extrabold text-slate-600 mb-2">Alamat Lengkap <span class="text-red-600">*</span></label>
                         <textarea name="alamat_cuti" required class="w-full min-h-[110px] px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-medium focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]" placeholder="Jalan, RT/RW, Kelurahan, Kecamatan, Kota/Kabupaten...">{{ old('alamat_cuti') }}</textarea>
                     </div>
+
                     <div>
                         <label class="block text-xs font-extrabold text-slate-600 mb-2">Nomor Telepon / HP <span class="text-red-600">*</span></label>
                         <input type="text" name="no_telepon" required value="{{ old('no_telepon') }}" class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]" placeholder="08xxxxxxxxxx">
                     </div>
-                    <div class="hidden md:block"></div>
+
+                    <div class="grid grid-cols-1 gap-5">
+                        <div>
+                            <label class="block text-xs font-extrabold text-slate-600 mb-2">Nomor Telepon / HP Darurat <span class="text-red-600">*</span></label>
+                            <input type="text" name="no_telepon_darurat" required value="{{ old('no_telepon_darurat') }}" class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]" placeholder="08xxxxxxxxxx">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-extrabold text-slate-600 mb-2">Hubungan dengan yang Bersangkutan <span class="text-red-600">*</span></label>
+                            <input type="text" name="hubungan_darurat" required value="{{ old('hubungan_darurat') }}" class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]" placeholder="Contoh: Istri, Suami, Orang Tua, Saudara">
+                        </div>
+                    </div>
                 </div>
             </section>
 
