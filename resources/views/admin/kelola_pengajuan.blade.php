@@ -308,7 +308,7 @@
 
                 @if($pengajuan->hasPages())
                 <div class="p-4 border-top">
-                    {{ $pengajuan->withQueryString()->links() }}
+                    {{ $pengajuan->withQueryString()->links('pagination::bootstrap-5') }}
                 </div>
                 @endif
             </div>
