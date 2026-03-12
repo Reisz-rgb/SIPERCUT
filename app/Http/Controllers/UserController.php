@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\MergeFieldReplacer;
 use App\Models\LeaveRequest;
 use App\Models\LeaveBalance;
 use Carbon\Carbon;
@@ -99,7 +100,7 @@ class UserController extends Controller
 
         if (!Hash::check($request->current_password, $user->password)) {
             return back()
-                ->withErrors(['current_password' => 'Password lama tidak sesuai. Gunakan password terakhir yang Anda set, atau gunakan NIP jika belum pernah mengubah password.'])
+                ->withErrors(['current_password' => 'Password lama tidak sesuai.'])
                 ->withInput();
         }
 
@@ -143,18 +144,25 @@ class UserController extends Controller
         $this->clearOutputBuffers();
 
         try {
-            $leave = LeaveRequest::with('user')->findOrFail($id);
-            $user  = $leave->user;
+            // Eager-load user dan supervisor sekaligus
+            $leave      = LeaveRequest::with(['user', 'supervisor'])->findOrFail($id);
+            $user       = $leave->user;
+            $supervisor = $leave->supervisor; // bisa null bila data lama
 
             $templatePath = $this->findTemplatePath();
             abort_unless($templatePath, 404, 'Template tidak ditemukan');
 
+            // ── Tahap 1: isi placeholder ${...} via PhpWord TemplateProcessor ──
             $processor = $this->fillTemplate($templatePath, $leave, $user);
-            $fileName  = 'Surat_Cuti_'
-                       . preg_replace('/[^A-Za-z0-9_\-]/', '_', $user->name)
-                       . '_' . date('Ymd_His') . '.docx';
+
+            $fileName = 'Surat_Cuti_'
+                      . preg_replace('/[^A-Za-z0-9_\-]/', '_', $user->name)
+                      . '_' . date('Ymd_His') . '.docx';
 
             $tempFile = $this->saveTempFile($processor, $fileName);
+
+            // ── Tahap 2: isi MERGEFIELD atasan via MergeFieldReplacer ──
+            $tempFile = $this->fillSupervisorMergeFields($tempFile, $supervisor);
 
             $this->clearOutputBuffers();
 
@@ -166,7 +174,7 @@ class UserController extends Controller
             Log::error('downloadSuratCuti error: ' . $e->getMessage());
 
             if (isset($tempFile) && file_exists($tempFile)) {
-                unlink($tempFile);
+                @unlink($tempFile);
             }
 
             return back()->with('error', 'Gagal membuat surat cuti: ' . $e->getMessage());
@@ -178,8 +186,52 @@ class UserController extends Controller
     // =========================================================================
 
     /**
-     * Ambil dan hitung data saldo cuti. Fallback ke nilai default bila error.
+     * Isi MERGEFIELD atasan langsung (Nama_Bidang, Atasan_Langsung,
+     * NIP_Atasan_langsung) menggunakan MergeFieldReplacer.
+     * Menggunakan saveInPlace() — timpa file temp langsung tanpa copy.
      */
+    private function fillSupervisorMergeFields(string $filePath, $supervisor): string
+    {
+        // Pastikan file benar-benar ada sebelum diproses
+        if (!file_exists($filePath)) {
+            throw new \RuntimeException(
+                "File temp tidak ditemukan sebelum MergeField: {$filePath}"
+            );
+        }
+
+        $namaAtasan   = $supervisor?->nama       ?? '-';
+        $nipAtasan    = $supervisor?->nip        ?? '-';
+        $unitKerja    = $supervisor?->unit_kerja ?? '-';
+        $nipFormatted = $this->formatNip($nipAtasan);
+
+        $replacer = new MergeFieldReplacer($filePath);
+        $replacer
+            ->setValue('Atasan_Langsung',     $namaAtasan)
+            ->setValue('NIP_Atasan_langsung', $nipFormatted)
+            ->setValue('Nama_Bidang',         $unitKerja);
+
+        // saveInPlace: timpa file yang sudah ada, tidak butuh copy
+        return $replacer->saveInPlace();
+    }
+
+    /**
+     * Format NIP 18 digit menjadi "XXXXXXXX XXXXXX X XXX".
+     * Bila format tidak dikenali, kembalikan apa adanya.
+     */
+    private function formatNip(string $nip): string
+    {
+        $digits = preg_replace('/\D/', '', $nip);
+
+        if (strlen($digits) === 18) {
+            return substr($digits, 0, 8) . ' '
+                 . substr($digits, 8, 6)  . ' '
+                 . substr($digits, 14, 1) . ' '
+                 . substr($digits, 15, 3);
+        }
+
+        return $nip;
+    }
+
     private function resolveLeaveBalance(int $userId): array
     {
         try {
@@ -207,9 +259,6 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Ambil 3 riwayat pengajuan terbaru milik user.
-     */
     private function getRecentLeaves(int $userId)
     {
         return LeaveRequest::where('user_id', $userId)
@@ -218,9 +267,6 @@ class UserController extends Controller
             ->get();
     }
 
-    /**
-     * Hitung statistik status pengajuan (untuk donut chart) dalam 1 query.
-     */
     private function getSubmissionStats(int $userId): array
     {
         $stats = LeaveRequest::where('user_id', $userId)
@@ -250,9 +296,6 @@ class UserController extends Controller
         return preg_replace('/[^0-9]/', '', $phone);
     }
 
-    /**
-     * Sanitize teks untuk dimasukkan ke template DOCX (cegah XML corrupt).
-     */
     private function sanitizeDocxValue(?string $text): string
     {
         if (empty($text)) {
@@ -263,9 +306,6 @@ class UserController extends Controller
         return htmlspecialchars($text, ENT_XML1 | ENT_QUOTES, 'UTF-8');
     }
 
-    /**
-     * Cari template surat cuti dari beberapa kemungkinan lokasi.
-     */
     private function findTemplatePath(): ?string
     {
         $candidates = [
@@ -285,15 +325,11 @@ class UserController extends Controller
         return null;
     }
 
-    /**
-     * Isi placeholder template DOCX dengan data leave request.
-     */
     private function fillTemplate(string $templatePath, $leave, $user): TemplateProcessor
     {
         $s  = fn ($v) => $this->sanitizeDocxValue($v);
         $tp = new TemplateProcessor($templatePath);
 
-        // Data surat
         $tp->setValue('TANGGAL_SURAT', Carbon::now()->isoFormat('D MMMM YYYY'));
         $tp->setValue('NAMA',          $s($user->name));
         $tp->setValue('NIP',           $s($user->nip));
@@ -301,21 +337,20 @@ class UserController extends Controller
         $tp->setValue('MASA_KERJA',    $s($user->masa_kerja));
         $tp->setValue('UNIT_KERJA',    $s($user->unit_kerja));
 
-        // Checkbox jenis cuti
+        // Key harus PERSIS sama dengan value radio button di form (pengajuan-cuti.blade.php)
         $jenisMap = [
-            'Cuti Tahunan'                    => 'CUTI_TAHUNAN',
-            'Cuti Besar'                      => 'CUTI_BESAR',
-            'Cuti Sakit'                      => 'CUTI_SAKIT',
-            'Cuti Melahirkan'                 => 'CUTI_MELAHIRKAN',
-            'Cuti Karena Alasan Penting'      => 'CUTI_KARENA_ALASAN_PENTING',
-            'Cuti di Luar Tanggungan Negara'  => 'CUTI_DI_LUAR_TANGGUNGAN_NEGARA',
+            'Cuti Tahunan'         => 'CUTI_TAHUNAN',
+            'Cuti Besar'           => 'CUTI_BESAR',
+            'Cuti Sakit'           => 'CUTI_SAKIT',
+            'Cuti Melahirkan'      => 'CUTI_MELAHIRKAN',
+            'Cuti Alasan Penting'  => 'CUTI_KARENA_ALASAN_PENTING',
+            'Cuti Luar Tanggungan' => 'CUTI_DI_LUAR_TANGGUNGAN_NEGARA',
         ];
 
         foreach ($jenisMap as $jenis => $placeholder) {
             $tp->setValue($placeholder, $leave->jenis_cuti === $jenis ? 'X' : ' ');
         }
 
-        // Detail cuti
         $tp->setValue('ALASAN',          $s($leave->reason));
         $tp->setValue('LAMA_HARI',       $leave->duration . ' hari');
         $tp->setValue('TANGGAL_MULAI',   Carbon::parse($leave->start_date)->isoFormat('D MMMM YYYY'));
@@ -327,7 +362,6 @@ class UserController extends Controller
         $tp->setValue('ALAMAT',          $s($leave->address));
         $tp->setValue('TELP',            $s($leave->phone));
 
-        // Status checkbox
         $tp->setValue('DISETUJUI',       $leave->status === LeaveRequest::STATUS_APPROVED ? 'X' : ' ');
         $tp->setValue('MENUNGGU',        $leave->status === LeaveRequest::STATUS_PENDING  ? 'X' : ' ');
         $tp->setValue('TIDAK_DISETUJUI', $leave->status === LeaveRequest::STATUS_REJECTED ? 'X' : ' ');
@@ -335,9 +369,6 @@ class UserController extends Controller
         return $tp;
     }
 
-    /**
-     * Simpan file sementara ke storage/app/temp, return path.
-     */
     private function saveTempFile(TemplateProcessor $processor, string $fileName): string
     {
         $tempDir = storage_path('app/temp');
@@ -353,18 +384,16 @@ class UserController extends Controller
             throw new \RuntimeException('File tidak berhasil dibuat');
         }
 
-        Log::info('Generated surat cuti: ' . $path . ' (' . filesize($path) . ' bytes)');
-
         return $path;
     }
 
     private function downloadHeaders(): array
     {
         return [
-            'Content-Type'        => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'Cache-Control'       => 'no-cache, no-store, must-revalidate',
-            'Pragma'              => 'no-cache',
-            'Expires'             => '0',
+            'Content-Type'  => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma'        => 'no-cache',
+            'Expires'       => '0',
         ];
     }
 
