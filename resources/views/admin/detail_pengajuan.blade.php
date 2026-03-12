@@ -318,6 +318,22 @@
                                         {{ $pengajuan->reason }}
                                     </div>
                                 </div>
+                                <div class="col-md-6">
+                                    <div class="label-muted">Alamat Selama Cuti</div>
+                                    <div class="value-text">{{ $pengajuan->address ?? '-' }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="label-muted">Nomor Telepon / HP</div>
+                                    <div class="value-text">{{ $pengajuan->phone ?? '-' }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="label-muted">Nomor Telepon / HP Darurat</div>
+                                    <div class="value-text">{{ $pengajuan->emergency_phone ?? '-' }}</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="label-muted">Hubungan dengan yang Bersangkutan</div>
+                                    <div class="value-text">{{ $pengajuan->emergency_relationship ?? '-' }}</div>
+                                </div>
                             </div>
 
                             <div class="mt-4 pt-4 border-top border-dashed">

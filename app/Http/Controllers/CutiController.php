@@ -66,9 +66,11 @@ class CutiController extends Controller
             'end_date'      => $validated['tanggal_selesai'],
             'duration'      => $validated['lama_hari'],
             'reason'        => $validated['alasan'],
-            'address'       => $validated['alamat_cuti'],
-            'phone'         => $this->sanitizePhone($request->no_telepon),
-            'notes'         => $validated['catatan_tambahan'],
+            'address'                 => $validated['alamat_cuti'],
+            'phone'                   => $this->sanitizePhone($request->no_telepon),
+            'emergency_phone'         => $this->sanitizePhone($request->no_telepon_darurat),
+            'emergency_relationship'  => $validated['hubungan_darurat'],
+            'notes'                   => $validated['catatan_tambahan'],
             'file_path'     => $this->uploadDocument($request),
             'status'        => LeaveRequest::STATUS_PENDING,
         ]);
@@ -161,9 +163,11 @@ class CutiController extends Controller
             'lama_hari'          => 'required|integer|min:1',
             'tanggal_mulai'      => 'required|date',
             'tanggal_selesai'    => 'required|date|after_or_equal:tanggal_mulai',
-            'alamat_cuti'        => 'required|string',
-            'no_telepon'         => 'required|string',
-            'catatan_tambahan'   => 'nullable|string',
+            'alamat_cuti'         => 'required|string',
+            'no_telepon'          => 'required|string',
+            'no_telepon_darurat'  => 'required|string',
+            'hubungan_darurat'    => 'required|string|max:100',
+            'catatan_tambahan'    => 'nullable|string',
             'dokumen_pendukung'  => 'nullable|file|mimes:pdf,doc,docx,jpg,png,xls,xlsx|max:5120',
         ];
     }
@@ -183,6 +187,9 @@ class CutiController extends Controller
             'tanggal_selesai.after_or_equal' => 'Tanggal selesai harus setelah atau sama dengan tanggal mulai',
             'alamat_cuti.required'           => 'Alamat selama cuti wajib diisi',
             'no_telepon.required'            => 'Nomor telepon wajib diisi',
+            'no_telepon_darurat.required'    => 'Nomor telepon/HP darurat wajib diisi',
+            'hubungan_darurat.required'      => 'Hubungan dengan yang bersangkutan wajib diisi',
+            'hubungan_darurat.max'           => 'Hubungan dengan yang bersangkutan maksimal 100 karakter',
             'dokumen_pendukung.max'          => 'Ukuran file maksimal 5MB',
         ];
     }

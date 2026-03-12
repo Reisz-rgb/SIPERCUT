@@ -30,6 +30,8 @@ class LeaveRequest extends Model
         'reason',
         'address',
         'phone',
+        'emergency_phone',
+        'emergency_relationship',
         'notes',
         'file_path',
         'status',
