@@ -199,16 +199,16 @@ class UserController extends Controller
             );
         }
 
-        $namaAtasan   = $supervisor?->nama       ?? '-';
-        $nipAtasan    = $supervisor?->nip        ?? '-';
-        $unitKerja    = $supervisor?->unit_kerja ?? '-';
-        $nipFormatted = $this->formatNip($nipAtasan);
+        $namaAtasan    = $supervisor?->nama ?? '-';
+        $nipAtasan     = $supervisor?->nip ?? '-';
+        $jabatanAtasan = $supervisor?->jabatan ?? $supervisor?->unit_kerja ?? '-';
+        $nipFormatted  = $this->formatNip($nipAtasan);
 
         $replacer = new MergeFieldReplacer($filePath);
         $replacer
             ->setValue('Atasan_Langsung',     $namaAtasan)
             ->setValue('NIP_Atasan_langsung', $nipFormatted)
-            ->setValue('Nama_Bidang',         $unitKerja);
+            ->setValue('Nama_Bidang',         $jabatanAtasan);
 
         // saveInPlace: timpa file yang sudah ada, tidak butuh copy
         return $replacer->saveInPlace();
@@ -330,7 +330,7 @@ class UserController extends Controller
         $s  = fn ($v) => $this->sanitizeDocxValue($v);
         $tp = new TemplateProcessor($templatePath);
 
-        $tp->setValue('TANGGAL_SURAT', Carbon::now()->isoFormat('D MMMM YYYY'));
+        $tp->setValue('TANGGAL_SURAT', Carbon::now()->locale('id')->translatedFormat('j F Y'));
         $tp->setValue('NAMA',          $s($user->name));
         $tp->setValue('NIP',           $s($user->nip));
         $tp->setValue('JABATAN',       $s($user->jabatan));
@@ -353,8 +353,8 @@ class UserController extends Controller
 
         $tp->setValue('ALASAN',          $s($leave->reason));
         $tp->setValue('LAMA_HARI',       $leave->duration . ' hari');
-        $tp->setValue('TANGGAL_MULAI',   Carbon::parse($leave->start_date)->isoFormat('D MMMM YYYY'));
-        $tp->setValue('TANGGAL_SELESAI', Carbon::parse($leave->end_date)->isoFormat('D MMMM YYYY'));
+        $tp->setValue('TANGGAL_MULAI',   Carbon::parse($leave->start_date)->locale('id')->translatedFormat('j F Y'));
+        $tp->setValue('TANGGAL_SELESAI', Carbon::parse($leave->end_date)->locale('id')->translatedFormat('j F Y'));
         $tp->setValue('SISA_N-2',        $s($user->sisa_cuti_n2));
         $tp->setValue('SISA_N-1',        $s($user->sisa_cuti_n1));
         $tp->setValue('N',               $s($user->sisa_cuti_n));
