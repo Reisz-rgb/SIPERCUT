@@ -280,6 +280,21 @@
                             <div class="form-text small">Default kuota cuti ASN adalah 12 hari/tahun.</div>
                             @error('annual_leave_quota') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                         </div>
+
+                        <div class="col-12">
+                            <div class="p-3 rounded-3 bg-light border border-secondary-subtle">
+                                <label class="form-label mb-2">Status Akun Sistem</label>
+                                <select name="status" class="form-select w-auto @error('status') is-invalid @enderror">
+                                    <option value="aktif" {{ old('status', 'aktif') == 'aktif' ? 'selected' : '' }}>Aktif</option>
+                                    <option value="nonaktif" {{ old('status') == 'nonaktif' ? 'selected' : '' }}>Non-aktif</option>
+                                </select>
+                                @error('status') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                <div class="d-flex align-items-start gap-2 mt-2 text-muted small">
+                                    <i class="bi bi-info-circle-fill mt-1 text-primary"></i>
+                                    <span style="line-height: 1.4;">Pilih <strong>Aktif</strong> agar pegawai dapat langsung login. Pilih <strong>Non-aktif</strong> jika akun belum boleh digunakan.</span>
+                                </div>
+                            </div>
+                        </div>
                         
                     </div>
 
