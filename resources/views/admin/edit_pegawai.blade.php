@@ -182,6 +182,8 @@
                     @method('PUT') 
 
                     <div class="row g-4">
+                        <input type="hidden" name="join_date" value="{{ old('join_date', optional($pegawai->join_date)->format('Y-m-d') ?? $pegawai->join_date) }}">
+                        <input type="hidden" name="annual_leave_quota" value="{{ old('annual_leave_quota', $pegawai->annual_leave_quota ?? 12) }}">
                         <div class="col-12 col-md-6">
                             <label class="form-label">Nama Lengkap</label>
                             <div class="input-group">
