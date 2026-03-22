@@ -8,10 +8,6 @@ use Illuminate\Support\Facades\Hash;
 
 class PegawaiController extends Controller
 {
-    // =========================================================================
-    // INDEX & CRUD
-    // =========================================================================
-
     public function index(Request $request)
     {
         $pegawai = User::where('role', 'user')
@@ -51,9 +47,9 @@ class PegawaiController extends Controller
             'jabatan'            => $validated['jabatan'],
             'bidang_unit'        => $validated['bidang_unit'],
             'join_date'          => $validated['join_date'],
-            'status'             => $validated['status'],
+            'status'             => $validated['status'] ?? 'aktif',
             'annual_leave_quota' => $validated['annual_leave_quota'],
-            'password'           => Hash::make($nip), // default password = NIP
+            'password'           => Hash::make($nip),
             'role'               => 'user',
         ]);
 
@@ -70,23 +66,30 @@ class PegawaiController extends Controller
 
     public function update(Request $request, $id)
     {
-        $pegawai   = User::findOrFail($id);
+        $pegawai = User::findOrFail($id);
+
         $validated = $request->validate(
-            $this->pegawaiRules($id),
+            $this->pegawaiUpdateRules((int) $id),
             $this->pegawaiMessages()
         );
 
-        $pegawai->update([
+        $pegawai->fill([
             'name'               => $validated['name'],
             'nip'                => $this->sanitizeNumeric($request->nip),
             'phone'              => $this->sanitizeNumeric($request->phone),
-            'email'              => $validated['email'],
+            'email'              => $validated['email'] ?? null,
             'jabatan'            => $validated['jabatan'],
             'bidang_unit'        => $validated['bidang_unit'],
-            'join_date'          => $validated['join_date'],
+            'join_date'          => $validated['join_date'] ?? $pegawai->join_date,
             'status'             => $validated['status'],
-            'annual_leave_quota' => $validated['annual_leave_quota'],
+            'annual_leave_quota' => $validated['annual_leave_quota'] ?? $pegawai->annual_leave_quota,
         ]);
+
+        if ($validated['status'] === 'nonaktif') {
+            $pegawai->remember_token = null;
+        }
+
+        $pegawai->save();
 
         return redirect()
             ->route('admin.kelola_pegawai')
@@ -121,13 +124,6 @@ class PegawaiController extends Controller
             ->with('success', 'Password pegawai berhasil direset ke NIP!');
     }
 
-    // =========================================================================
-    // PRIVATE HELPERS
-    // =========================================================================
-
-    /**
-     * Validasi rules pegawai, dengan $id opsional untuk update (ignore unique self).
-     */
     private function pegawaiRules(?int $id = null): array
     {
         $unique = fn ($col) => 'required|string|unique:users,' . $col . ($id ? ',' . $id : '');
@@ -145,6 +141,21 @@ class PegawaiController extends Controller
         ];
     }
 
+    private function pegawaiUpdateRules(int $id): array
+    {
+        return [
+            'name'               => 'required|string|max:255',
+            'nip'                => 'required|string|unique:users,nip,' . $id,
+            'phone'              => 'required|string|unique:users,phone,' . $id,
+            'email'              => 'nullable|email|unique:users,email,' . $id,
+            'jabatan'            => 'required|string|max:255',
+            'bidang_unit'        => 'required|string|max:255',
+            'join_date'          => 'nullable|date',
+            'annual_leave_quota' => 'nullable|integer|min:0|max:30',
+            'status'             => 'required|in:aktif,nonaktif',
+        ];
+    }
+
     private function pegawaiMessages(): array
     {
         return [
@@ -158,6 +169,8 @@ class PegawaiController extends Controller
             'bidang_unit.required'        => 'Unit kerja wajib diisi',
             'annual_leave_quota.required' => 'Kuota cuti wajib diisi',
             'annual_leave_quota.integer'  => 'Kuota cuti harus berupa angka',
+            'status.required'             => 'Status akun wajib dipilih',
+            'status.in'                   => 'Status akun tidak valid',
         ];
     }
 
