@@ -57,19 +57,19 @@ Route::middleware(['guest','no.cache'])->group(function () {
 
 
 Route::get('/register-success', fn() => view('auth.RegisterSuccess'))
-    ->middleware(['auth','no.cache'])
+    ->middleware(['auth','active.user','no.cache'])
     ->name('register.success');
     
 Route::post('/logout', [AuthController::class, 'logout'])
     ->name('logout')
-    ->middleware(['auth','no.cache']);
+    ->middleware(['auth','active.user','no.cache']);
 
 /*
 |--------------------------------------------------------------------------
 | USER AREA - Authenticated Users Only
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth'])->prefix('user')->name('user.')->group(function () {
+Route::middleware(['auth', 'active.user'])->prefix('user')->name('user.')->group(function () {
     // Dashboard
     Route::get('/dashboard', [UserController::class, 'dashboard'])->name('dashboard');
     
@@ -86,7 +86,7 @@ Route::middleware(['auth'])->prefix('user')->name('user.')->group(function () {
     Route::get('/riwayat', [UserController::class, 'history'])->name('riwayat');
 
     // Download Surat Cuti
-    Route::middleware(['auth', 'clean.output'])->group(function () {
+    Route::middleware(['auth', 'active.user', 'clean.output'])->group(function () {
         Route::get('/cuti/{id}/download', [UserController::class, 'downloadSuratCuti'])
             ->name('cuti.download');
     });
@@ -101,7 +101,7 @@ Route::middleware(['auth'])->prefix('user')->name('user.')->group(function () {
 | ADMIN AREA
 |--------------------------------------------------------------------------
 */
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'active.user', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     
     // 1. DASHBOARD & PROFIL
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
