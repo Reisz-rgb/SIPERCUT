@@ -9,12 +9,19 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    // =========================================================================
-    // LOGIN
-    // =========================================================================
-
     public function showLogin()
     {
+        if (Auth::check() && ! Auth::user()->isActive()) {
+            Auth::logout();
+            request()->session()->invalidate();
+            request()->session()->regenerateToken();
+
+            return view('auth.LoginPage')
+                ->withErrors([
+                    'login' => 'Akun Anda tidak aktif. Silakan hubungi administrator.'
+                ]);
+        }
+
         return Auth::check()
             ? $this->redirectBasedOnRole()
             : view('auth.LoginPage');
@@ -37,6 +44,19 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials, $request->filled('remember'))) {
             $request->session()->regenerate();
+
+            if (! Auth::user()->isActive()) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()
+                    ->withErrors([
+                        'login' => 'Akun Anda tidak aktif. Silakan hubungi administrator.'
+                    ])
+                    ->withInput();
+            }
+
             return $this->redirectBasedOnRole();
         }
 
@@ -44,10 +64,6 @@ class AuthController extends Controller
             ->withErrors(['login' => 'NIP atau password salah'])
             ->withInput();
     }
-
-    // =========================================================================
-    // REGISTER
-    // =========================================================================
 
     public function showRegister()
     {
@@ -78,6 +94,7 @@ class AuthController extends Controller
             'phone'    => $this->sanitizeNumeric($request->phone),
             'password' => Hash::make($request->password),
             'role'     => 'user',
+            'status'   => 'aktif',
         ]);
 
         Auth::login($user);
@@ -85,10 +102,6 @@ class AuthController extends Controller
 
         return redirect()->route('register.success');
     }
-
-    // =========================================================================
-    // LOGOUT
-    // =========================================================================
 
     public function logout(Request $request)
     {
@@ -98,10 +111,6 @@ class AuthController extends Controller
 
         return redirect()->route('landing');
     }
-
-    // =========================================================================
-    // PRIVATE HELPERS
-    // =========================================================================
 
     private function redirectBasedOnRole()
     {
