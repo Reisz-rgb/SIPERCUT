@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'clean.output' => \App\Http\Middleware\CleanOutputBuffer::class,
 
             'no.cache' => \App\Http\Middleware\NoCache::class,
+            'active.user' => \App\Http\Middleware\ActiveUserMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
