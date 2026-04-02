@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCutiRequest;
 use App\Models\LeaveRequest;
 use App\Models\LeaveBalance;
 use App\Models\Supervisor;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 
 class CutiController extends Controller
 {
@@ -30,49 +30,40 @@ class CutiController extends Controller
             ->groupBy('unit_kerja');
 
         return view('user.pengajuan-cuti', compact(
-            'user',
-            'leaveBalance',
-            'workYears',
-            'workMonths',
-            'supervisors'
+            'user', 'leaveBalance', 'workYears', 'workMonths', 'supervisors'
         ));
     }
 
-    public function store(Request $request)
+    public function store(StoreCutiRequest $request)
     {
-        $validated = $request->validate(
-            $this->storeRules(),
-            $this->storeMessages()
-        );
+        $user = Auth::user();
 
-        $user         = Auth::user();
-        $leaveBalance = LeaveBalance::calculateTotalAvailable($user->id, now()->year);
+        // Cek saldo Cuti Tahunan (butuh data user, tidak bisa di Form Request)
+        if ($request->isCutiTahunan()) {
+            $leaveBalance = LeaveBalance::calculateTotalAvailable($user->id, now()->year);
 
-        // Cek saldo khusus Cuti Tahunan
-        if (
-            $validated['jenis_cuti'] === 'Cuti Tahunan' &&
-            $validated['lama_hari'] > $leaveBalance['total_available']
-        ) {
-            return back()
-                ->withErrors(['lama_hari' => "Saldo cuti tidak mencukupi. Tersedia: {$leaveBalance['total_available']} hari"])
-                ->withInput();
+            if ($request->lama_hari > $leaveBalance['total_available']) {
+                return back()
+                    ->withErrors(['lama_hari' => "Saldo cuti tidak mencukupi. Tersedia: {$leaveBalance['total_available']} hari"])
+                    ->withInput();
+            }
         }
 
         $leaveRequest = LeaveRequest::create([
-            'user_id'       => $user->id,
-            'supervisor_id' => $validated['supervisor_id'],
-            'jenis_cuti'    => $validated['jenis_cuti'],
-            'start_date'    => $validated['tanggal_mulai'],
-            'end_date'      => $validated['tanggal_selesai'],
-            'duration'      => $validated['lama_hari'],
-            'reason'        => $validated['alasan'],
-            'address'                 => $validated['alamat_cuti'],
-            'phone'                   => $this->sanitizePhone($request->no_telepon),
-            'emergency_phone'         => $this->sanitizePhone($request->no_telepon_darurat),
-            'emergency_relationship'  => $validated['hubungan_darurat'],
-            'notes'                   => $validated['catatan_tambahan'],
-            'file_path'     => $this->uploadDocument($request),
-            'status'        => LeaveRequest::STATUS_PENDING,
+            'user_id'                => $user->id,
+            'supervisor_id'          => $request->supervisor_id,
+            'jenis_cuti'             => $request->jenis_cuti,
+            'start_date'             => $request->tanggal_mulai,
+            'end_date'               => $request->tanggal_selesai,
+            'duration'               => $request->lama_hari,
+            'reason'                 => $request->alasan,
+            'address'                => $request->alamat_cuti,
+            'phone'                  => $this->sanitizePhone($request->no_telepon),
+            'emergency_phone'        => $this->sanitizePhone($request->no_telepon_darurat),
+            'emergency_relationship' => $request->hubungan_darurat,
+            'notes'                  => $request->catatan_tambahan,
+            'file_path'              => $this->uploadDocument($request),
+            'status'                 => LeaveRequest::STATUS_PENDING,
         ]);
 
         $refNumber = 'CUTI-' . now()->year . '-' . str_pad($leaveRequest->id, 4, '0', STR_PAD_LEFT);
@@ -95,8 +86,8 @@ class CutiController extends Controller
         $leaveRequest = LeaveRequest::findOrFail($id);
 
         $validated = $request->validate([
-            'keputusan'     => 'required|in:disetujui,tidak_disetujui',
-            'pertimbangan'  => 'nullable|string',
+            'keputusan'    => 'required|in:disetujui,tidak_disetujui',
+            'pertimbangan' => 'nullable|string',
         ]);
 
         $status = $validated['keputusan'] === 'disetujui'
@@ -148,49 +139,9 @@ class CutiController extends Controller
 
     private function syncAnnualLeaveBalance(LeaveRequest $leaveRequest): void
     {
-        if ($leaveRequest->jenis_cuti === 'Cuti Tahunan') {
+        if ($leaveRequest->jenis_cuti === LeaveRequest::JENIS_TAHUNAN) {
             $year = Carbon::parse($leaveRequest->start_date)->year;
             LeaveBalance::recalculateAnnualBalances((int) $leaveRequest->user_id, $year);
         }
-    }
-
-    private function storeRules(): array
-    {
-        return [
-            'supervisor_id'      => 'required|exists:supervisors,id',
-            'jenis_cuti'         => 'required|string',
-            'alasan'             => 'required|string|min:20',
-            'lama_hari'          => 'required|integer|min:1',
-            'tanggal_mulai'      => 'required|date',
-            'tanggal_selesai'    => 'required|date|after_or_equal:tanggal_mulai',
-            'alamat_cuti'         => 'required|string',
-            'no_telepon'          => 'required|string',
-            'no_telepon_darurat'  => 'required|string',
-            'hubungan_darurat'    => 'required|string|max:100',
-            'catatan_tambahan'    => 'nullable|string',
-            'dokumen_pendukung'  => 'nullable|file|mimes:pdf,doc,docx,jpg,png,xls,xlsx|max:5120',
-        ];
-    }
-
-    private function storeMessages(): array
-    {
-        return [
-            'supervisor_id.required'         => 'Atasan langsung wajib dipilih',
-            'supervisor_id.exists'           => 'Atasan langsung yang dipilih tidak valid',
-            'jenis_cuti.required'            => 'Jenis cuti wajib dipilih',
-            'alasan.required'                => 'Alasan cuti wajib diisi',
-            'alasan.min'                     => 'Mohon berikan alasan yang lebih mendalam (minimal 20 karakter).',
-            'lama_hari.required'             => 'Lama hari cuti wajib diisi',
-            'lama_hari.min'                  => 'Lama cuti minimal 1 hari',
-            'tanggal_mulai.required'         => 'Tanggal mulai wajib diisi',
-            'tanggal_selesai.required'       => 'Tanggal selesai wajib diisi',
-            'tanggal_selesai.after_or_equal' => 'Tanggal selesai harus setelah atau sama dengan tanggal mulai',
-            'alamat_cuti.required'           => 'Alamat selama cuti wajib diisi',
-            'no_telepon.required'            => 'Nomor telepon wajib diisi',
-            'no_telepon_darurat.required'    => 'Nomor telepon/HP darurat wajib diisi',
-            'hubungan_darurat.required'      => 'Hubungan dengan yang bersangkutan wajib diisi',
-            'hubungan_darurat.max'           => 'Hubungan dengan yang bersangkutan maksimal 100 karakter',
-            'dokumen_pendukung.max'          => 'Ukuran file maksimal 5MB',
-        ];
     }
 }
