@@ -118,15 +118,6 @@
     @endif
 </div>
 
-
-            @if(isset($leaves) && method_exists($leaves, 'hasPages') && $leaves->hasPages())
-                <div class="pt-2">
-                    {{ $leaves->appends(['status' => $status])->links() }}
-                </div>
-            @endif
-        </div>
-    </section>
-
     <div class="text-center pt-8 pb-4">
         <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">SIPERCUT © {{ now()->year }} • Disdikbudpora Kab Semarang</p>
     </div>
