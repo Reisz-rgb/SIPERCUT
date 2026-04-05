@@ -112,8 +112,38 @@
     @endforelse
 
     @if(isset($leaves) && method_exists($leaves, 'hasPages') && $leaves->hasPages())
-        <div class="pt-2">
-            {{ $leaves->appends(['status' => $status])->links() }}
+        <div class="pt-4 flex items-center justify-between text-sm">
+            <p class="text-slate-500 font-medium text-xs">
+                Menampilkan {{ $leaves->firstItem() }}–{{ $leaves->lastItem() }} dari {{ $leaves->total() }} data
+            </p>
+            <div class="flex items-center gap-1">
+                {{-- Tombol Prev --}}
+                @if($leaves->onFirstPage())
+                    <span class="px-3 py-2 rounded-xl border border-slate-200 text-slate-300 text-xs font-bold cursor-not-allowed">‹</span>
+                @else
+                    <a href="{{ $leaves->appends(['status' => $status])->previousPageUrl() }}"
+                    class="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-xs font-bold transition-all">‹</a>
+                @endif
+
+                {{-- Nomor halaman --}}
+                @foreach($leaves->getUrlRange(1, $leaves->lastPage()) as $page => $url)
+                    @if($page == $leaves->currentPage())
+                        <span class="px-3 py-2 rounded-xl text-xs font-extrabold text-white"
+                            style="background-color: var(--maroon);">{{ $page }}</span>
+                    @else
+                        <a href="{{ $url }}&status={{ $status }}"
+                        class="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-xs font-bold transition-all">{{ $page }}</a>
+                    @endif
+                @endforeach
+
+                {{-- Tombol Next --}}
+                @if($leaves->hasMorePages())
+                    <a href="{{ $leaves->appends(['status' => $status])->nextPageUrl() }}"
+                    class="px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 text-xs font-bold transition-all">›</a>
+                @else
+                    <span class="px-3 py-2 rounded-xl border border-slate-200 text-slate-300 text-xs font-bold cursor-not-allowed">›</span>
+                @endif
+            </div>
         </div>
     @endif
 </div>
@@ -122,7 +152,7 @@
         <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">SIPERCUT © {{ now()->year }} • Disdikbudpora Kab Semarang</p>
     </div>
 
-    {{-- Modal detail (tetap pakai id & JS lama agar logic tidak berubah) --}}
+    {{-- Modal detail --}}
     <div class="fixed inset-0 bg-black/60 backdrop-blur-[2px] z-[9999] items-center justify-center p-4" id="modal">
         <div class="w-full max-w-3xl bg-white rounded-2xl overflow-hidden shadow-2xl border border-black/10 flex flex-col max-h-[90vh]">
             <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
