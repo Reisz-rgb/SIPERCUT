@@ -332,10 +332,30 @@ class UserController extends Controller
 
         $tp->setValue('TANGGAL_SURAT', Carbon::now()->locale('id')->translatedFormat('j F Y'));
         $tp->setValue('NAMA',          $s($user->name));
-        $tp->setValue('NIP',           $s($user->nip));
+        $tp->setValue('NIP', $this->formatNip($user->nip ?? ''));
         $tp->setValue('JABATAN',       $s($user->jabatan));
-        $tp->setValue('MASA_KERJA',    $s($user->masa_kerja));
-        $tp->setValue('UNIT_KERJA',    $s($user->unit_kerja));
+        $masaKerja = '-';
+        $joinDate = $user->join_date;
+        if (!$joinDate && $user->nip) {
+            $digits = preg_replace('/\D/', '', $user->nip);
+            if (strlen($digits) === 18) {
+                $tmt = substr($digits, 8, 6); // YYYYMM
+                try {
+                    $joinDate = \Carbon\Carbon::createFromFormat('Ym', $tmt)->startOfMonth();
+                } catch (\Throwable $e) {
+                    $joinDate = null;
+                }
+            }
+        }
+
+        if ($joinDate) {
+            $diff = \Carbon\Carbon::parse($joinDate)->diff(\Carbon\Carbon::now());
+            $masaKerja = $diff->y . ' Tahun ' . $diff->m . ' Bulan';
+        }
+
+        $tp->setValue('MASA_KERJA', $masaKerja);
+        $tp->setValue('MASA_KERJA', $masaKerja);
+        $tp->setValue('UNIT_KERJA', $s($user->bidang_unit));
 
         // Key harus PERSIS sama dengan value radio button di form (pengajuan-cuti.blade.php)
         $jenisMap = [
@@ -355,9 +375,16 @@ class UserController extends Controller
         $tp->setValue('LAMA_HARI',       $leave->duration . ' hari');
         $tp->setValue('TANGGAL_MULAI',   Carbon::parse($leave->start_date)->locale('id')->translatedFormat('j F Y'));
         $tp->setValue('TANGGAL_SELESAI', Carbon::parse($leave->end_date)->locale('id')->translatedFormat('j F Y'));
-        $tp->setValue('SISA_N-2',        $s($user->sisa_cuti_n2));
-        $tp->setValue('SISA_N-1',        $s($user->sisa_cuti_n1));
-        $tp->setValue('N',               $s($user->sisa_cuti_n));
+        try {
+            $balance = \App\Models\LeaveBalance::calculateTotalAvailable($user->id, now()->year);
+            $tp->setValue('SISA_N-2', isset($balance['n2']['remaining']) ? (string)$balance['n2']['remaining'] : '-');
+            $tp->setValue('SISA_N-1', isset($balance['n1']['remaining']) ? (string)$balance['n1']['remaining'] : '-');
+            $tp->setValue('N',        isset($balance['n']['remaining'])  ? (string)$balance['n']['remaining']  : '-');
+        } catch (\Throwable $e) {
+            $tp->setValue('SISA_N-2', '-');
+            $tp->setValue('SISA_N-1', '-');
+            $tp->setValue('N',        '-');
+        }
         $tp->setValue('KETERANGAN',      '-');
         $tp->setValue('ALAMAT',          $s($leave->address));
         $tp->setValue('TELP',            $s($leave->phone));
