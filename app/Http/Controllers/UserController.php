@@ -357,18 +357,20 @@ class UserController extends Controller
         $tp->setValue('MASA_KERJA', $masaKerja);
         $tp->setValue('UNIT_KERJA', $s($user->bidang_unit));
 
-        // Key harus PERSIS sama dengan value radio button di form (pengajuan-cuti.blade.php)
-        $jenisMap = [
-            'Cuti Tahunan'         => 'CUTI_TAHUNAN',
-            'Cuti Besar'           => 'CUTI_BESAR',
-            'Cuti Sakit'           => 'CUTI_SAKIT',
-            'Cuti Melahirkan'      => 'CUTI_MELAHIRKAN',
-            'Cuti Alasan Penting'  => 'CUTI_KARENA_ALASAN_PENTING',
-            'Cuti Luar Tanggungan' => 'CUTI_DI_LUAR_TANGGUNGAN_NEGARA',
+        // Normalize nama jenis cuti dari DB
+       $jenisMap = [
+        'Cuti Tahunan'                   => 'CUTI_TAHUNAN',
+        'Cuti Besar'                     => 'CUTI_BESAR',
+        'Cuti Sakit'                     => 'CUTI_SAKIT',
+        'Cuti Melahirkan'                => 'CUTI_MELAHIRKAN',
+        'Cuti Karena Alasan Penting'     => 'CUTI_KARENA_ALASAN_PENTING',   // ← fix
+        'Cuti Alasan Penting'            => 'CUTI_KARENA_ALASAN_PENTING',   // ← fallback lama
+        'Cuti di luar tanggungan Negara' => 'CUTI_DI_LUAR_TANGGUNGAN_NEGARA', // ← fix
+        'Cuti Luar Tanggungan'           => 'CUTI_DI_LUAR_TANGGUNGAN_NEGARA', // ← fallback lama
         ];
 
         foreach ($jenisMap as $jenis => $placeholder) {
-            $tp->setValue($placeholder, $leave->jenis_cuti === $jenis ? 'X' : ' ');
+            $tp->setValue($placeholder, trim($leave->jenis_cuti) === $jenis ? 'X' : ' ');
         }
 
         $tp->setValue('ALASAN',          $s($leave->reason));
