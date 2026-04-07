@@ -378,16 +378,34 @@ class UserController extends Controller
         $tp->setValue('TANGGAL_MULAI',   Carbon::parse($leave->start_date)->locale('id')->translatedFormat('j F Y'));
         $tp->setValue('TANGGAL_SELESAI', Carbon::parse($leave->end_date)->locale('id')->translatedFormat('j F Y'));
         try {
-            $balance = \App\Models\LeaveBalance::calculateTotalAvailable($user->id, now()->year);
-            $tp->setValue('SISA_N-2', isset($balance['n2']['remaining']) ? (string)$balance['n2']['remaining'] : '-');
-            $tp->setValue('SISA_N-1', isset($balance['n1']['remaining']) ? (string)$balance['n1']['remaining'] : '-');
-            $tp->setValue('N',        isset($balance['n']['remaining'])  ? (string)$balance['n']['remaining']  : '-');
+            $leaveYear = \Carbon\Carbon::parse($leave->start_date)->year;
+            
+            // Selalu recalculate dulu (hanya Cuti Tahunan yang dipotong)
+            $balance = \App\Models\LeaveBalance::recalculateAnnualBalances($user->id, $leaveYear);
+
+            $sisaN2  = (int)($balance['n2']['remaining'] ?? 0);
+            $sisaN1  = (int)($balance['n1']['remaining'] ?? 0);
+            $sisaN   = (int)($balance['n']['remaining']  ?? 0);
+            $bonusN2 = (int) floor($sisaN2 / 2);
+            $bonusN1 = (int) floor($sisaN1 / 2);
+            $totalN  = $sisaN + $bonusN1 + $bonusN2; // dengan filter fix: 12+6+6=24
+
+            $tp->setValue('SISA_N-2', (string) $sisaN2);
+            $tp->setValue('SISA_N-1', (string) $sisaN1);
+            $tp->setValue('N',        (string) $totalN);
+            $tp->setValue('KET_N2',   $bonusN2 > 0 ? "Bonus: {$bonusN2} hr" : '-');
+            $tp->setValue('KET_N1',   $bonusN1 > 0 ? "Bonus: {$bonusN1} hr" : '-');
+            $tp->setValue('KET_N',    $totalN !== $sisaN ? "Termasuk bonus " . ($bonusN1 + $bonusN2) . " hr" : '-');
+
         } catch (\Throwable $e) {
+            \Log::error('Balance fillTemplate: ' . $e->getMessage());
             $tp->setValue('SISA_N-2', '-');
             $tp->setValue('SISA_N-1', '-');
             $tp->setValue('N',        '-');
+            $tp->setValue('KET_N2',   '-');
+            $tp->setValue('KET_N1',   '-');
+            $tp->setValue('KET_N',    '-');
         }
-        $tp->setValue('KETERANGAN',      '-');
         $tp->setValue('ALAMAT',          $s($leave->address));
         $tp->setValue('TELP',            $s($leave->phone));
 

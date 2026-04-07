@@ -141,29 +141,22 @@ class LeaveBalance extends Model
     // PRIVATE HELPERS
     // =========================================================================
 
-    /**
-     * Jumlahkan duration pengajuan Cuti Tahunan yang approved pada tahun tertentu.
-     */
     private static function sumApprovedDuration(int $userId, int $year): int
     {
         return (int) DB::table('leave_requests')
             ->where('user_id', $userId)
-            ->where('jenis_cuti', 'Cuti Tahunan')
+            ->where('jenis_cuti', 'Cuti Tahunan') 
             ->where('status', LeaveRequest::STATUS_APPROVED)
             ->whereYear('start_date', $year)
             ->sum('duration');
     }
 
-    /**
-     * Ambil daftar pengajuan Cuti Tahunan yang approved pada tahun tertentu,
-     * diurutkan secara kronologis.
-     */
     private static function getApprovedRequests(int $userId, int $year)
     {
         return DB::table('leave_requests')
             ->select(['id', 'duration', 'start_date', 'created_at'])
             ->where('user_id', $userId)
-            ->where('jenis_cuti', 'Cuti Tahunan')
+            ->where('jenis_cuti', 'Cuti Tahunan') 
             ->where('status', LeaveRequest::STATUS_APPROVED)
             ->whereYear('start_date', $year)
             ->orderBy('start_date')
