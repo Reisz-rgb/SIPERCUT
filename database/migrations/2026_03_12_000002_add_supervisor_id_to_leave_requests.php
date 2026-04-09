@@ -1,14 +1,14 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Support\SafeMigration;
 
-return new class extends Migration
+return new class extends SafeMigration
 {
     public function up(): void
     {
-        Schema::table('leave_requests', function (Blueprint $table) {
+        $this->safeTable('leave_requests', function (Blueprint $table) {
             // Letakkan setelah kolom 'user_id' agar urutannya logis
             $table->foreignId('supervisor_id')
                   ->nullable()
@@ -20,7 +20,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('leave_requests', function (Blueprint $table) {
+        $this->safeTable('leave_requests', function (Blueprint $table) {
             $table->dropForeign(['supervisor_id']);
             $table->dropColumn('supervisor_id');
         });
