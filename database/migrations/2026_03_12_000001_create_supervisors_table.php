@@ -1,14 +1,14 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Support\SafeMigration;
 
-return new class extends Migration
+return new class extends SafeMigration
 {
     public function up(): void
     {
-        Schema::create('supervisors', function (Blueprint $table) {
+        $this->safeCreateTable('supervisors', function (Blueprint $table) {
             $table->id();
             $table->string('nama');
             $table->string('nip')->unique();

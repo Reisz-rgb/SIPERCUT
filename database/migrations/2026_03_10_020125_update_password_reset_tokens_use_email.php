@@ -1,17 +1,17 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Support\SafeMigration;
 
-return new class extends Migration
+return new class extends SafeMigration
 {
     /**
      * Run the migrations.
      */
    public function up(): void
     {
-        Schema::table('password_reset_tokens', function (Blueprint $table) {
+        $this->safeTable('password_reset_tokens', function (Blueprint $table) {
             // Hapus kolom phone jika ada
             if (Schema::hasColumn('password_reset_tokens', 'phone')) {
                 $table->dropColumn('phone');
