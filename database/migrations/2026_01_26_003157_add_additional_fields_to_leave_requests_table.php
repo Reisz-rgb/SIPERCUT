@@ -24,7 +24,7 @@ return new class extends SafeMigration
 
     public function down(): void
     {
-        Schema::table('leave_requests', function (Blueprint $table) {
+        $this->safeTable('leave_requests', function (Blueprint $table) {
             $table->dropColumn(['duration', 'address', 'phone', 'notes', 'file_path', 'rejection_reason']);
             $table->renameColumn('jenis_cuti', 'leave_type');
         });
