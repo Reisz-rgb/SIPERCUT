@@ -1,14 +1,14 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Support\SafeMigration;
 
-return new class extends Migration
+return new class extends SafeMigration
 {
     public function up(): void
     {
-        Schema::table('leave_requests', function (Blueprint $table) {
+        $this->safeTable('leave_requests', function (Blueprint $table) {
             // Tambah kolom yang kurang
             $table->integer('duration')->after('end_date'); // Jumlah hari
             $table->string('address')->nullable()->after('reason'); // Alamat selama cuti
