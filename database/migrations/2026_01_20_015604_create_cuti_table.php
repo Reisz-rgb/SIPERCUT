@@ -1,17 +1,17 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Support\SafeMigration;
 
-return new class extends Migration
+return new class extends SafeMigration
 {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
-        Schema::create('cuti', function (Blueprint $table) {
+        $this->safeCreateTable('cuti', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             
