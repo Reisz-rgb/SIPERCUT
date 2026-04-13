@@ -26,3 +26,4 @@ storage/app/temp/*
 !storage/app/temp/.gitignore
 *.sql   
 .env.testing*:Zone.Identifier
+.env.testing
