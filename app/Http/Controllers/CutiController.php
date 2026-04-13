@@ -19,7 +19,7 @@ class CutiController extends Controller
 
     public function create()
     {
-        $user         = Auth::user();
+        $user = Auth::user();
         $leaveBalance = LeaveBalance::calculateTotalAvailable($user->id, now()->year);
         [$workYears, $workMonths] = $this->resolveWorkDuration($user->join_date);
 
@@ -31,7 +31,11 @@ class CutiController extends Controller
             ->groupBy('unit_kerja');
 
         return view('user.pengajuan-cuti', compact(
-            'user', 'leaveBalance', 'workYears', 'workMonths', 'supervisors'
+            'user',
+            'leaveBalance',
+            'workYears',
+            'workMonths',
+            'supervisors'
         ));
     }
 
@@ -39,32 +43,32 @@ class CutiController extends Controller
     {
         $user = Auth::user();
 
-        // Cek saldo Cuti Tahunan (butuh data user, tidak bisa di Form Request)
+        // Cek saldo Cuti Tahunan
         if ($request->isCutiTahunan()) {
             $leaveBalance = LeaveBalance::calculateTotalAvailable($user->id, now()->year);
 
             if ($request->lama_hari > $leaveBalance['total_available']) {
                 return back()
-                    ->withErrors(['lama_hari' => "Saldo cuti tidak mencukupi. Tersedia: {$leaveBalance['total_available']} hari"])
+                    ->withErrors([
+                        'lama_hari' => "Saldo cuti tidak mencukupi. Tersedia: {$leaveBalance['total_available']} hari"
+                    ])
                     ->withInput();
             }
         }
 
         $leaveRequest = LeaveRequest::create([
-            'user_id'                => $user->id,
-            'supervisor_id'          => $request->supervisor_id,
-            'jenis_cuti'             => $request->jenis_cuti,
-            'start_date'             => $request->tanggal_mulai,
-            'end_date'               => $request->tanggal_selesai,
-            'duration'               => $request->lama_hari,
-            'reason'                 => $request->alasan,
-            'address'                => $request->alamat_cuti,
-            'phone'                  => $this->sanitizePhone($request->no_telepon),
-            'emergency_phone'        => $this->sanitizePhone($request->no_telepon_darurat),
-            'emergency_relationship' => $request->hubungan_darurat,
-            'notes'                  => $request->catatan_tambahan,
-            'file_path'              => $this->uploadDocument($request),
-            'status'                 => LeaveRequest::STATUS_PENDING,
+            'user_id'       => $user->id,
+            'supervisor_id' => $request->supervisor_id,
+            'jenis_cuti'    => $request->jenis_cuti,
+            'start_date'    => $request->tanggal_mulai,
+            'end_date'      => $request->tanggal_selesai,
+            'duration'      => $request->lama_hari,
+            'reason'        => $request->alasan,
+            'address'       => $request->alamat_cuti,
+            'phone'         => $this->sanitizePhone($request->no_telepon),
+            'notes'         => $request->catatan_tambahan,
+            'file_path'     => $this->uploadDocument($request),
+            'status'        => LeaveRequest::STATUS_PENDING,
         ]);
 
         $refNumber = 'CUTI-' . now()->year . '-' . str_pad($leaveRequest->id, 4, '0', STR_PAD_LEFT);
@@ -119,7 +123,6 @@ class CutiController extends Controller
 
         abort_if(!$leaveRequest->file_path, 404);
 
-        // Cek file benar-benar ada di storage
         abort_unless(Storage::disk('private')->exists($leaveRequest->file_path), 404);
 
         return Storage::disk('private')->download($leaveRequest->file_path);
@@ -131,8 +134,8 @@ class CutiController extends Controller
 
     private function resolveWorkDuration(?string $joinDate): array
     {
-        $join   = $joinDate ? Carbon::parse($joinDate) : now()->subYears(5);
-        $years  = (int) floor($join->diffInYears(now()));
+        $join = $joinDate ? Carbon::parse($joinDate) : now()->subYears(5);
+        $years = (int) floor($join->diffInYears(now()));
         $months = (int) floor($join->copy()->addYears($years)->diffInMonths(now()));
 
         return [$years, $months];
@@ -145,8 +148,6 @@ class CutiController extends Controller
         }
 
         $file = $request->file('dokumen_pendukung');
-
-        // UUID agar nama file tidak bisa ditebak atau di-traverse
         $safeFileName = \Str::uuid() . '.' . strtolower($file->getClientOriginalExtension());
 
         return $file->storeAs('leave_documents', $safeFileName, 'private');

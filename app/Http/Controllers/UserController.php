@@ -144,25 +144,29 @@ class UserController extends Controller
         $this->clearOutputBuffers();
 
         try {
-            // Eager-load user dan supervisor sekaligus
-            $leave      = LeaveRequest::with(['user', 'supervisor'])->findOrFail($id);
+            $leave = LeaveRequest::with(['user', 'supervisor'])->findOrFail($id);
+
+            abort_unless((int) $leave->user_id === (int) auth()->id(), 403, 'Anda tidak berhak mengunduh surat cuti ini.');
+
             $user       = $leave->user;
-            $supervisor = $leave->supervisor; // bisa null bila data lama
+            $supervisor = $leave->supervisor;
 
             $templatePath = $this->findTemplatePath();
             abort_unless($templatePath, 404, 'Template tidak ditemukan');
 
-            // ── Tahap 1: isi placeholder ${...} via PhpWord TemplateProcessor ──
             $processor = $this->fillTemplate($templatePath, $leave, $user);
 
             $fileName = 'Surat_Cuti_'
-                      . preg_replace('/[^A-Za-z0-9_\-]/', '_', $user->name)
+                      . preg_replace('/[^A-Za-z0-9_\-]/', '_', (string) $user->name)
                       . '_' . date('Ymd_His') . '.docx';
 
             $tempFile = $this->saveTempFile($processor, $fileName);
 
-            // ── Tahap 2: isi MERGEFIELD atasan via MergeFieldReplacer ──
-            $tempFile = $this->fillSupervisorMergeFields($tempFile, $supervisor);
+            try {
+                $tempFile = $this->fillSupervisorMergeFields($tempFile, $supervisor);
+            } catch (\Throwable $mergeError) {
+                Log::warning('fillSupervisorMergeFields gagal, fallback ke file tanpa mergefield: ' . $mergeError->getMessage());
+            }
 
             $this->clearOutputBuffers();
 
@@ -170,8 +174,11 @@ class UserController extends Controller
                 ->download($tempFile, $fileName, $this->downloadHeaders())
                 ->deleteFileAfterSend(true);
 
-        } catch (\Exception $e) {
-            Log::error('downloadSuratCuti error: ' . $e->getMessage());
+        } catch (\Throwable $e) {
+            Log::error('downloadSuratCuti error: ' . $e->getMessage(), [
+                'leave_id' => $id,
+                'user_id' => auth()->id(),
+            ]);
 
             if (isset($tempFile) && file_exists($tempFile)) {
                 @unlink($tempFile);
@@ -311,17 +318,32 @@ class UserController extends Controller
         $candidates = [
             storage_path('app/template/surat_cuti_template.docx'),
             storage_path('app/template/template/surat_cuti_template.docx'),
+            storage_path('app/template/temp.docx'),
+            storage_path('app/template/Template Surat Cuti.docx'),
             base_path('storage/app/template/surat_cuti_template.docx'),
             base_path('storage/app/template/template/surat_cuti_template.docx'),
+            base_path('storage/app/template/temp.docx'),
+            base_path('storage/app/template/Template Surat Cuti.docx'),
         ];
 
-        foreach ($candidates as $path) {
+        foreach (array_unique($candidates) as $path) {
             if (is_file($path) && is_readable($path)) {
                 return $path;
             }
         }
 
-        Log::error('Template not found. Tried: ' . implode(' | ', $candidates));
+        $templateDir = storage_path('app/template');
+        if (is_dir($templateDir)) {
+            $docxFiles = glob($templateDir . DIRECTORY_SEPARATOR . '*.docx') ?: [];
+            foreach ($docxFiles as $path) {
+                if (is_file($path) && is_readable($path)) {
+                    Log::warning('Menggunakan fallback template DOCX: ' . $path);
+                    return $path;
+                }
+            }
+        }
+
+        Log::error('Template not found. Tried: ' . implode(' | ', array_unique($candidates)));
         return null;
     }
 
@@ -330,87 +352,108 @@ class UserController extends Controller
         $s  = fn ($v) => $this->sanitizeDocxValue($v);
         $tp = new TemplateProcessor($templatePath);
 
-        $tp->setValue('TANGGAL_SURAT', Carbon::now()->locale('id')->translatedFormat('j F Y'));
-        $tp->setValue('NAMA',          $s($user->name));
-        $tp->setValue('NIP', $this->formatNip($user->nip ?? ''));
-        $tp->setValue('JABATAN',       $s($user->jabatan));
-        $masaKerja = '-';
-        $joinDate = $user->join_date;
-        if (!$joinDate && $user->nip) {
-            $digits = preg_replace('/\D/', '', $user->nip);
-            if (strlen($digits) === 18) {
-                $tmt = substr($digits, 8, 6); // YYYYMM
-                try {
-                    $joinDate = \Carbon\Carbon::createFromFormat('Ym', $tmt)->startOfMonth();
-                } catch (\Throwable $e) {
-                    $joinDate = null;
+        $jenisCuti = trim((string) ($leave->jenis_cuti ?? ''));
+        $unitKerja = $user->bidang_unit ?? $user->unit_kerja ?? '-';
+        $masaKerja = $user->masa_kerja ?? null;
+
+        if (blank($masaKerja)) {
+            $joinDate = $user->join_date ?? null;
+
+            if (!$joinDate && !empty($user->nip)) {
+                $digits = preg_replace('/\D/', '', (string) $user->nip);
+                if (strlen($digits) === 18) {
+                    $tmt = substr($digits, 8, 6);
+                    try {
+                        $joinDate = Carbon::createFromFormat('Ym', $tmt)->startOfMonth();
+                    } catch (\Throwable $e) {
+                        $joinDate = null;
+                    }
                 }
+            }
+
+            if ($joinDate) {
+                $diff = Carbon::parse($joinDate)->diff(Carbon::now());
+                $masaKerja = $diff->y . ' Tahun ' . $diff->m . ' Bulan';
             }
         }
 
-        if ($joinDate) {
-            $diff = \Carbon\Carbon::parse($joinDate)->diff(\Carbon\Carbon::now());
-            $masaKerja = $diff->y . ' Tahun ' . $diff->m . ' Bulan';
-        }
+        $tp->setValue('TANGGAL_SURAT', Carbon::now()->locale('id')->translatedFormat('j F Y'));
+        $tp->setValue('NAMA', $s($user->name ?? '-'));
+        $tp->setValue('NIP', $this->formatNip((string) ($user->nip ?? '')));
+        $tp->setValue('JABATAN', $s($user->jabatan ?? '-'));
+        $tp->setValue('MASA_KERJA', $s($masaKerja ?: '-'));
+        $tp->setValue('UNIT_KERJA', $s($unitKerja));
 
-        $tp->setValue('MASA_KERJA', $masaKerja);
-        $tp->setValue('MASA_KERJA', $masaKerja);
-        $tp->setValue('UNIT_KERJA', $s($user->bidang_unit));
-
-        // Normalize nama jenis cuti dari DB
-       $jenisMap = [
-        'Cuti Tahunan'                   => 'CUTI_TAHUNAN',
-        'Cuti Besar'                     => 'CUTI_BESAR',
-        'Cuti Sakit'                     => 'CUTI_SAKIT',
-        'Cuti Melahirkan'                => 'CUTI_MELAHIRKAN',
-        'Cuti Karena Alasan Penting'     => 'CUTI_KARENA_ALASAN_PENTING',   // ← fix
-        'Cuti Alasan Penting'            => 'CUTI_KARENA_ALASAN_PENTING',   // ← fallback lama
-        'Cuti di luar tanggungan Negara' => 'CUTI_DI_LUAR_TANGGUNGAN_NEGARA', // ← fix
-        'Cuti Luar Tanggungan'           => 'CUTI_DI_LUAR_TANGGUNGAN_NEGARA', // ← fallback lama
+        $jenisMap = [
+            'Cuti Tahunan' => 'CUTI_TAHUNAN',
+            'Cuti Besar' => 'CUTI_BESAR',
+            'Cuti Sakit' => 'CUTI_SAKIT',
+            'Cuti Melahirkan' => 'CUTI_MELAHIRKAN',
+            'Cuti Karena Alasan Penting' => 'CUTI_KARENA_ALASAN_PENTING',
+            'Cuti Alasan Penting' => 'CUTI_KARENA_ALASAN_PENTING',
+            'Cuti di Luar Tanggungan Negara' => 'CUTI_DI_LUAR_TANGGUNGAN_NEGARA',
+            'Cuti di luar tanggungan Negara' => 'CUTI_DI_LUAR_TANGGUNGAN_NEGARA',
+            'Cuti Luar Tanggungan' => 'CUTI_DI_LUAR_TANGGUNGAN_NEGARA',
         ];
 
+        $usedPlaceholders = [];
         foreach ($jenisMap as $jenis => $placeholder) {
-            $tp->setValue($placeholder, trim($leave->jenis_cuti) === $jenis ? 'X' : ' ');
+            $isSelected = strcasecmp($jenisCuti, $jenis) === 0;
+            if (!isset($usedPlaceholders[$placeholder]) || $isSelected) {
+                $tp->setValue($placeholder, $isSelected ? 'X' : ' ');
+                $usedPlaceholders[$placeholder] = true;
+            }
         }
 
-        $tp->setValue('ALASAN',          $s($leave->reason));
-        $tp->setValue('LAMA_HARI',       $leave->duration . ' hari');
-        $tp->setValue('TANGGAL_MULAI',   Carbon::parse($leave->start_date)->locale('id')->translatedFormat('j F Y'));
+        $tp->setValue('ALASAN', $s($leave->reason ?? '-'));
+        $tp->setValue('LAMA_HARI', (string) (($leave->duration ?? '-') . ' hari'));
+        $tp->setValue('TANGGAL_MULAI', Carbon::parse($leave->start_date)->locale('id')->translatedFormat('j F Y'));
         $tp->setValue('TANGGAL_SELESAI', Carbon::parse($leave->end_date)->locale('id')->translatedFormat('j F Y'));
+
+        $sisaN2 = $user->sisa_cuti_n2 ?? '-';
+        $sisaN1 = $user->sisa_cuti_n1 ?? '-';
+        $sisaN  = $user->sisa_cuti_n ?? '-';
+        $keterangan = '-';
+        $ketN2 = '-';
+        $ketN1 = '-';
+        $ketN = '-';
+
         try {
-            $leaveYear = \Carbon\Carbon::parse($leave->start_date)->year;
-            
-            // Selalu recalculate dulu (hanya Cuti Tahunan yang dipotong)
-            $balance = \App\Models\LeaveBalance::recalculateAnnualBalances($user->id, $leaveYear);
+            if (method_exists(LeaveBalance::class, 'recalculateAnnualBalances') && !empty($user->id) && !empty($leave->start_date)) {
+                $leaveYear = Carbon::parse($leave->start_date)->year;
+                $balance = LeaveBalance::recalculateAnnualBalances((int) $user->id, $leaveYear);
 
-            $sisaN2  = (int)($balance['n2']['remaining'] ?? 0);
-            $sisaN1  = (int)($balance['n1']['remaining'] ?? 0);
-            $sisaN   = (int)($balance['n']['remaining']  ?? 0);
-            $bonusN2 = (int) floor($sisaN2 / 2);
-            $bonusN1 = (int) floor($sisaN1 / 2);
-            $totalN  = $sisaN + $bonusN1 + $bonusN2; // dengan filter fix: 12+6+6=24
+                $sisaN2Raw = (int) ($balance['n2']['remaining'] ?? 0);
+                $sisaN1Raw = (int) ($balance['n1']['remaining'] ?? 0);
+                $sisaNRaw  = (int) ($balance['n']['remaining'] ?? 0);
+                $bonusN2 = (int) floor($sisaN2Raw / 2);
+                $bonusN1 = (int) floor($sisaN1Raw / 2);
+                $totalN  = $sisaNRaw + $bonusN1 + $bonusN2;
 
-            $tp->setValue('SISA_N-2', (string) $sisaN2);
-            $tp->setValue('SISA_N-1', (string) $sisaN1);
-            $tp->setValue('N',        (string) $totalN);
-            $tp->setValue('KET_N2',   $bonusN2 > 0 ? "Bonus: {$bonusN2} hr" : '-');
-            $tp->setValue('KET_N1',   $bonusN1 > 0 ? "Bonus: {$bonusN1} hr" : '-');
-            $tp->setValue('KET_N',    $totalN !== $sisaN ? "Termasuk bonus " . ($bonusN1 + $bonusN2) . " hr" : '-');
-
+                $sisaN2 = (string) $sisaN2Raw;
+                $sisaN1 = (string) $sisaN1Raw;
+                $sisaN = (string) $totalN;
+                $keterangan = $totalN !== $sisaNRaw ? 'Termasuk bonus ' . ($bonusN1 + $bonusN2) . ' hr' : '-';
+                $ketN2 = $bonusN2 > 0 ? 'Bonus: ' . $bonusN2 . ' hr' : '-';
+                $ketN1 = $bonusN1 > 0 ? 'Bonus: ' . $bonusN1 . ' hr' : '-';
+                $ketN = $keterangan;
+            }
         } catch (\Throwable $e) {
-            \Log::error('Balance fillTemplate: ' . $e->getMessage());
-            $tp->setValue('SISA_N-2', '-');
-            $tp->setValue('SISA_N-1', '-');
-            $tp->setValue('N',        '-');
-            $tp->setValue('KET_N2',   '-');
-            $tp->setValue('KET_N1',   '-');
-            $tp->setValue('KET_N',    '-');
+            Log::warning('Balance fillTemplate fallback: ' . $e->getMessage());
         }
-        $tp->setValue('ALAMAT',          $s($leave->address));
-        $tp->setValue('TELP',            $s($leave->phone));
 
-        $tp->setValue('DISETUJUI',       $leave->status === LeaveRequest::STATUS_APPROVED ? 'X' : ' ');
-        $tp->setValue('MENUNGGU',        $leave->status === LeaveRequest::STATUS_PENDING  ? 'X' : ' ');
+        $tp->setValue('SISA_N-2', $s((string) $sisaN2));
+        $tp->setValue('SISA_N-1', $s((string) $sisaN1));
+        $tp->setValue('N', $s((string) $sisaN));
+        $tp->setValue('KETERANGAN', $s($keterangan));
+        $tp->setValue('KET_N2', $s($ketN2));
+        $tp->setValue('KET_N1', $s($ketN1));
+        $tp->setValue('KET_N', $s($ketN));
+        $tp->setValue('ALAMAT', $s($leave->address ?? '-'));
+        $tp->setValue('TELP', $s($leave->phone ?? '-'));
+
+        $tp->setValue('DISETUJUI', $leave->status === LeaveRequest::STATUS_APPROVED ? 'X' : ' ');
+        $tp->setValue('MENUNGGU', $leave->status === LeaveRequest::STATUS_PENDING ? 'X' : ' ');
         $tp->setValue('TIDAK_DISETUJUI', $leave->status === LeaveRequest::STATUS_REJECTED ? 'X' : ' ');
 
         return $tp;
