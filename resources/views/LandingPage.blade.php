@@ -231,7 +231,6 @@
 
                     <p class="hero-lead mb-0">
                         Satu pintu untuk pengajuan cuti, monitoring status, dan rekapitulasi.
-                        Desainnya dibuat konsisten dengan tampilan Admin/User SIPERCUT.
                     </p>
                 </div>
 
