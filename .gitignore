@@ -25,5 +25,5 @@ Thumbs.db
 storage/app/temp/*
 !storage/app/temp/.gitignore
 *.sql   
-*:Zone.Identifier
 .env.testing
+*:Zone.Identifier
