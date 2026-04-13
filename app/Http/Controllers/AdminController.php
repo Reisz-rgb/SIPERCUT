@@ -58,12 +58,16 @@ class AdminController extends Controller
         $pengajuan = LeaveRequest::findOrFail($id);
 
         if (!$pengajuan->file_path) {
-            return back()->with('error', 'Tidak ada lampiran.');
+            return back()->with('error', 'Tidak ada lampiran untuk pengajuan ini.');
         }
 
-        abort_unless(Storage::disk('public')->exists($pengajuan->file_path), 404);
+        abort_unless(
+            Storage::disk('private')->exists($pengajuan->file_path),
+            404,
+            'File lampiran tidak ditemukan.'
+        );
 
-        return Storage::disk('public')->download(
+        return Storage::disk('private')->download(
             $pengajuan->file_path,
             basename($pengajuan->file_path)
         );

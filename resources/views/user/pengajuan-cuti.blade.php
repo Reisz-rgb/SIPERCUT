@@ -349,12 +349,15 @@
                     <div>
                         <label class="block text-xs font-extrabold text-slate-600 mb-2">Dokumen Lampiran</label>
                         <div id="dropZone" class="relative rounded-2xl border border-dashed border-slate-200 bg-slate-50/40 p-6 flex flex-col items-center justify-center text-center">
-                            <input type="file" name="dokumen_pendukung" id="fileUpload" accept=".pdf,.doc,.docx,.jpg,.png,.xls,.xlsx" class="absolute inset-0 opacity-0 cursor-pointer" />
+                            <input type="file" name="dokumen_pendukung" id="fileUpload" accept=".pdf,.doc,.docx,.jpg,.png" class="absolute inset-0 opacity-0 cursor-pointer" />
+                            @error('dokumen_pendukung')
+                                <p class="text-xs text-red-600 font-semibold mt-2">{{ $message }}</p>
+                            @enderror
                             <div id="uploadIcon" class="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-500">
                                 <i class="bi bi-upload text-2xl"></i>
                             </div>
                             <div id="uploadText" class="mt-4 text-sm font-extrabold text-slate-700">Klik atau seret file ke sini</div>
-                            <div id="uploadHint" class="mt-2 text-xs text-slate-500 font-medium">Supported: PDF, DOC, JPG, PNG, XLS (Maks 5MB)</div>
+                            <div id="uploadHint" class="mt-2 text-xs text-slate-500 font-medium">Supported: PDF, DOC, JPG, PNG (Maks 5MB)</div>
                         </div>
                     </div>
 
@@ -437,6 +440,67 @@
         if (supervisorSelect.value) {
             updateSupervisorInfo();
         }
+    }
+
+    const ALLOWED_TYPES = [
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'image/jpeg',
+    'image/png',
+    ];
+    const ALLOWED_EXT = ['pdf', 'docx', 'jpg', 'jpeg', 'png'];
+    const MAX_SIZE_MB = 5;
+
+    fileInput.addEventListener('change', function () {
+        if (!this.files || !this.files[0]) return;
+
+        const file = this.files[0];
+        const ext = file.name.split('.').pop().toLowerCase();
+        const sizeMB = file.size / (1024 * 1024);
+
+        // Cek ekstensi
+        if (!ALLOWED_EXT.includes(ext)) {
+            showError(`Format file tidak diizinkan: .${ext}`);
+            this.value = ''; // Reset input
+            return;
+        }
+
+        // Cek MIME type (deteksi dari browser)
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            showError(`Tipe file tidak valid.`);
+            this.value = '';
+            return;
+        }
+
+        // Cek ukuran
+        if (sizeMB > MAX_SIZE_MB) {
+            showError(`Ukuran file melebihi ${MAX_SIZE_MB}MB.`);
+            this.value = '';
+            return;
+        }
+
+        // Lolos — tampilkan preview
+        showSuccess(file);
+    });
+
+    function showError(message) {
+        uploadText.innerText = message;
+        uploadText.className = 'mt-4 text-sm font-extrabold text-red-600';
+        uploadHint.innerText = 'Pilih file lain: PDF, DOCX, JPG, atau PNG (maks 5MB)';
+        uploadHint.className = 'mt-2 text-xs text-red-400 font-medium';
+        uploadIcon.innerHTML = '<i class="bi bi-x-circle-fill text-2xl text-red-500"></i>';
+        dropZone.classList.replace('border-slate-200', 'border-red-300');
+        dropZone.classList.add('bg-red-50/40');
+    }
+
+    function showSuccess(file) {
+        uploadText.innerText = 'File Siap Diupload!';
+        uploadText.className = 'mt-4 text-sm font-extrabold text-emerald-700';
+        uploadHint.innerHTML = `<strong>Berhasil memilih:</strong> ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+        uploadHint.className = 'mt-2 text-xs text-emerald-700 font-medium';
+        uploadIcon.innerHTML = '<i class="bi bi-check-circle-fill text-2xl text-emerald-600"></i>';
+        dropZone.classList.replace('border-slate-200', 'border-emerald-300');
+        dropZone.classList.add('bg-emerald-50/40');
     }
 </script>
 @endpush

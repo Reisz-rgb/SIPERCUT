@@ -9,6 +9,7 @@ use App\Models\Supervisor;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class CutiController extends Controller
 {
@@ -107,6 +108,23 @@ class CutiController extends Controller
         ]);
     }
 
+    public function downloadDocument($id)
+    {
+        $leaveRequest = LeaveRequest::findOrFail($id);
+
+        abort_unless(
+            Auth::user()->isAdmin() || Auth::id() === $leaveRequest->user_id,
+            403
+        );
+
+        abort_if(!$leaveRequest->file_path, 404);
+
+        // Cek file benar-benar ada di storage
+        abort_unless(Storage::disk('private')->exists($leaveRequest->file_path), 404);
+
+        return Storage::disk('private')->download($leaveRequest->file_path);
+    }
+
     // =========================================================================
     // PRIVATE HELPERS
     // =========================================================================
@@ -126,10 +144,12 @@ class CutiController extends Controller
             return null;
         }
 
-        $file     = $request->file('dokumen_pendukung');
-        $fileName = time() . '_' . $file->getClientOriginalName();
+        $file = $request->file('dokumen_pendukung');
 
-        return $file->storeAs('leave_documents', $fileName, 'public');
+        // UUID agar nama file tidak bisa ditebak atau di-traverse
+        $safeFileName = \Str::uuid() . '.' . strtolower($file->getClientOriginalExtension());
+
+        return $file->storeAs('leave_documents', $safeFileName, 'private');
     }
 
     private function sanitizePhone(string $phone): string
