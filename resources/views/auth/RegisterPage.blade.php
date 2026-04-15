@@ -209,7 +209,7 @@
                 </div>
 
                 {{-- DILARANG ubah name/action/logic. Hanya styling. --}}
-                <form action="{{ route('register') }}" method="POST">
+                <form action="{{ route('register.process') }}" method="POST">
                     @csrf
 
                     <div class="row g-3">
@@ -240,6 +240,46 @@
                                     <i class="bi bi-telephone"></i>
                                 </span>
                                 <input type="text" name="phone" class="form-control" placeholder="0812xxxx" value="{{ old('phone') }}" required style="border-left: none; border-radius: 0 12px 12px 0;">
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Email</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white" style="border-radius: 12px 0 0 12px; border: 1px solid #E2E8F0; border-right: none;">
+                                    <i class="bi bi-envelope"></i>
+                                </span>
+                                <input type="email" name="email" class="form-control" placeholder="nama@email.com" value="{{ old('email') }}" required style="border-left: none; border-radius: 0 12px 12px 0;">
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Unit Kerja</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white" style="border-radius: 12px 0 0 12px; border: 1px solid #E2E8F0; border-right: none;">
+                                    <i class="bi bi-building"></i>
+                                </span>
+                                <input type="text" name="bidang_unit" list="unitKerjaOptions" class="form-control" placeholder="Ketik atau pilih unit kerja" value="{{ old('bidang_unit') }}" autocomplete="off" required style="border-left: none; border-radius: 0 12px 12px 0;">
+                                <datalist id="unitKerjaOptions">
+                                    @foreach (($unitKerjaOptions ?? []) as $unitKerja)
+                                        <option value="{{ $unitKerja }}"></option>
+                                    @endforeach
+                                </datalist>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Jabatan</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white" style="border-radius: 12px 0 0 12px; border: 1px solid #E2E8F0; border-right: none;">
+                                    <i class="bi bi-briefcase"></i>
+                                </span>
+                                <input type="text" name="jabatan" list="jabatanOptions" class="form-control" placeholder="Ketik atau pilih jabatan" value="{{ old('jabatan') }}" autocomplete="off" required style="border-left: none; border-radius: 0 12px 12px 0;">
+                                <datalist id="jabatanOptions">
+                                    @foreach (($jabatanOptions ?? []) as $jabatanOption)
+                                        <option value="{{ $jabatanOption }}"></option>
+                                    @endforeach
+                                </datalist>
                             </div>
                         </div>
 
