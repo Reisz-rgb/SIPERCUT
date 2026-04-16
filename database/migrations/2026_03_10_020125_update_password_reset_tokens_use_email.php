@@ -11,7 +11,7 @@ return new class extends SafeMigration
      */
    public function up(): void
     {
-        $this->safeTable('password_reset_tokens', function (Blueprint $table) {
+        $this->safeCreateTable('password_reset_tokens', function (Blueprint $table) {
             // Hapus kolom phone jika ada
             if (Schema::hasColumn('password_reset_tokens', 'phone')) {
                 $table->dropColumn('phone');

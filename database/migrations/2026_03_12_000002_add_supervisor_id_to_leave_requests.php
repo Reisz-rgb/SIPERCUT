@@ -8,7 +8,7 @@ return new class extends SafeMigration
 {
     public function up(): void
     {
-        $this->safeTable('leave_requests', function (Blueprint $table) {
+        $this->safeCreateTable('leave_requests', function (Blueprint $table) {
             // Letakkan setelah kolom 'user_id' agar urutannya logis
             $table->foreignId('supervisor_id')
                   ->nullable()
@@ -20,7 +20,7 @@ return new class extends SafeMigration
 
     public function down(): void
     {
-        $this->safeTable('leave_requests', function (Blueprint $table) {
+        $this->safeCreateTable('leave_requests', function (Blueprint $table) {
             $table->dropForeign(['supervisor_id']);
             $table->dropColumn('supervisor_id');
         });

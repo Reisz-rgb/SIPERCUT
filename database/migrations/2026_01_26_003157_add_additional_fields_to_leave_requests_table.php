@@ -8,7 +8,7 @@ return new class extends SafeMigration
 {
     public function up(): void
     {
-        $this->safeTable('leave_requests', function (Blueprint $table) {
+        $this->safeCreateTable('leave_requests', function (Blueprint $table) {
             // Tambah kolom yang kurang
             $table->integer('duration')->after('end_date'); // Jumlah hari
             $table->string('address')->nullable()->after('reason'); // Alamat selama cuti
@@ -24,7 +24,7 @@ return new class extends SafeMigration
 
     public function down(): void
     {
-        $this->safeTable('leave_requests', function (Blueprint $table) {
+        $this->safeCreateTable('leave_requests', function (Blueprint $table) {
             $table->dropColumn(['duration', 'address', 'phone', 'notes', 'file_path', 'rejection_reason']);
             $table->renameColumn('jenis_cuti', 'leave_type');
         });
