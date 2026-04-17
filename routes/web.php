@@ -83,10 +83,10 @@ Route::middleware(['auth', 'active.user', 'no.cache'])
         Route::post('/pengajuan-cuti', [CutiController::class, 'store'])->name('cuti.store');
 
         // Download surat cuti — clean.output ditambah di sini saja (bukan double-group)
-        Route::get('/cuti/{id}/download', [UserController::class, 'downloadSuratCuti'])
+        Route::get('/cuti/{leave}/download', [UserController::class, 'downloadSuratCuti'])
             ->middleware('clean.output')
             ->name('cuti.download');
-    });
+});
 
 /*
 |--------------------------------------------------------------------------

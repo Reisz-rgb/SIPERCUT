@@ -139,14 +139,14 @@ class UserController extends Controller
     // DOWNLOAD SURAT CUTI
     // =========================================================================
 
-    public function downloadSuratCuti($id)
+    public function downloadSuratCuti(LeaveRequest $leave)
     {
         $this->clearOutputBuffers();
 
         try {
-            $leave = LeaveRequest::with(['user', 'supervisor'])->findOrFail($id);
+            $leave->load(['user', 'supervisor']);
 
-            abort_unless((int) $leave->user_id === (int) auth()->id(), 403, 'Anda tidak berhak mengunduh surat cuti ini.');
+            abort_unless($leave->user_id === auth()->id(), 403);
 
             $user       = $leave->user;
             $supervisor = $leave->supervisor;
@@ -157,34 +157,29 @@ class UserController extends Controller
             $processor = $this->fillTemplate($templatePath, $leave, $user);
 
             $fileName = 'Surat_Cuti_'
-                      . preg_replace('/[^A-Za-z0-9_\-]/', '_', (string) $user->name)
-                      . '_' . date('Ymd_His') . '.docx';
+                . preg_replace('/[^A-Za-z0-9_\-]/', '_', (string) $user->name)
+                . '_' . date('Ymd_His') . '.docx';
 
             $tempFile = $this->saveTempFile($processor, $fileName);
 
             try {
                 $tempFile = $this->fillSupervisorMergeFields($tempFile, $supervisor);
             } catch (\Throwable $mergeError) {
-                Log::warning('fillSupervisorMergeFields gagal, fallback ke file tanpa mergefield: ' . $mergeError->getMessage());
+                Log::warning('MergeField gagal: ' . $mergeError->getMessage());
             }
 
-            $this->clearOutputBuffers();
-
-            return response()
-                ->download($tempFile, $fileName, $this->downloadHeaders())
-                ->deleteFileAfterSend(true);
+            return response()->download($tempFile, $fileName, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                'Content-Disposition' => 'attachment; filename="'.$fileName.'"',
+            ])->deleteFileAfterSend(true);
 
         } catch (\Throwable $e) {
             Log::error('downloadSuratCuti error: ' . $e->getMessage(), [
-                'leave_id' => $id,
+                'leave_id' => $leave->id ?? null,
                 'user_id' => auth()->id(),
             ]);
 
-            if (isset($tempFile) && file_exists($tempFile)) {
-                @unlink($tempFile);
-            }
-
-            return back()->with('error', 'Gagal membuat surat cuti: ' . $e->getMessage());
+            return back()->with('error', 'Gagal download surat');
         }
     }
 

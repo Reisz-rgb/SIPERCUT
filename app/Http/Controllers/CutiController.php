@@ -66,6 +66,8 @@ class CutiController extends Controller
             'reason'        => $request->alasan,
             'address'       => $request->alamat_cuti,
             'phone'         => $this->sanitizePhone($request->no_telepon),
+            'emergency_phone'        => $this->sanitizePhone($request->no_telepon_darurat),
+            'emergency_relationship' => $request->hubungan_darurat,
             'notes'         => $request->catatan_tambahan,
             'file_path'     => $this->uploadDocument($request),
             'status'        => LeaveRequest::STATUS_PENDING,

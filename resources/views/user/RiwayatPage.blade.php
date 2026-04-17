@@ -6,13 +6,12 @@
 
 @push('head')
     <style>
-        /* Modal helper: JS lama pakai class "open" */
-        #modal{ display:none; }
-        #modal.open{ display:flex; }
+        [x-cloak] { display: none !important; }
     </style>
 @endpush
 
 @section('content')
+<div x-data="leaveModal()" class="p-6">
     @php($status = $status ?? 'all')
 
     <section class="bg-white rounded-3xl shadow-soft border border-slate-100 overflow-hidden">
@@ -89,9 +88,10 @@
                     {{ $leave->duration }} Hari
                 </span>
 
-                <button class="btn-detail-sm inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold border border-[var(--maroon)] text-[var(--maroon)] hover:bg-[var(--maroon)] hover:text-white transition-all"
-                        onclick="openModal(this)"
-                        data-leave='@json($leaveData)'>
+                <button 
+                    class="btn-detail-sm inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-extrabold border border-[var(--maroon)] text-[var(--maroon)] hover:bg-[var(--maroon)] hover:text-white transition-all"
+                    @click='openModal(@json($leaveData), "{{ route('user.cuti.download', $leave) }}")'
+                >
                     <i class="bi bi-eye"></i>
                     Detail
                 </button>
@@ -153,29 +153,54 @@
     </div>
 
     {{-- Modal detail --}}
-    <div class="fixed inset-0 bg-black/60 backdrop-blur-[2px] z-[9999] items-center justify-center p-4" id="modal">
+    <div 
+    x-show="open"
+    x-cloak
+    @click.self="closeModal()" 
+    x-transition
+    class="fixed inset-0 bg-black/60 backdrop-blur-[2px] z-[9999] flex items-center justify-center p-4"
+    >
         <div class="w-full max-w-3xl bg-white rounded-2xl overflow-hidden shadow-2xl border border-black/10 flex flex-col max-h-[90vh]">
             <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                 <h4 id="modalTitle" class="text-base md:text-lg font-extrabold text-slate-800">Detail Pengajuan Cuti</h4>
-                <button class="w-10 h-10 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xl flex items-center justify-center" id="closeBtn" type="button">×</button>
+                <button @click="closeModal()" type="button" class="w-10 h-10 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-600 text-xl flex items-center justify-center">×</button>
             </div>
 
             <div class="p-6 overflow-y-auto">
-                <div id="statusAlert" class="mb-4 hidden rounded-xl px-4 py-3 text-sm font-bold"></div>
+                <div 
+                    x-show="status"
+                    class="mb-4 rounded-xl px-4 py-3 text-sm font-bold"
+                    :class="{
+                        'bg-red-100 text-red-700': status === 'Ditolak',
+                        'bg-green-100 text-green-700': status === 'Diterima',
+                        'bg-amber-100 text-amber-700': status === 'Diproses'
+                    }"
+                    x-text="
+                        status === 'Ditolak' ? 'Pengajuan ini ditolak. Silakan perbaiki data.' :
+                        status === 'Diterima' ? 'Pengajuan ini telah disetujui.' :
+                        'Pengajuan sedang dalam proses verifikasi.'
+                    "
+                ></div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="space-y-2">
                         <label class="text-xs font-extrabold text-slate-600">ID Pengajuan</label>
-                        <input id="f_id" type="text" readonly class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600" />
+                        <input  :value="data.id" type="text" readonly class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-600" />
                     </div>
                     <div class="space-y-2">
                         <label class="text-xs font-extrabold text-slate-600">Status Saat Ini</label>
-                        <input id="f_status" type="text" readonly class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-extrabold" />
+                        <input  :value="data.status" 
+                        :class="{
+                            'text-red-600': status === 'Ditolak',
+                            'text-green-600': status === 'Diterima',
+                            'text-amber-600': status === 'Diproses'
+                        }"
+                        type="text" readonly class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-extrabold" />
                     </div>
 
                     <div class="space-y-2">
                         <label class="text-xs font-extrabold text-slate-600">Jenis Cuti</label>
-                        <select id="f_jenis" disabled class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
+                        <select  x-model="data.jenis" disabled class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">
                             <option>Cuti Tahunan</option>
                             <option>Cuti Sakit</option>
                             <option>Cuti Besar</option>
@@ -186,69 +211,94 @@
 
                     <div class="space-y-2">
                         <label class="text-xs font-extrabold text-slate-600">Lampiran</label>
-                        <div id="drop-area" class="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm">
-                            <div class="flex items-center gap-3 text-slate-600">
-                                <div class="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center">📂</div>
-                                <div>
-                                    <div class="font-bold" id="drop-text-label">Drag & drop file surat di sini</div>
-                                    <div id="file-name-display" class="mt-1 text-[var(--maroon)] font-extrabold"></div>
+                        <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </div>
+                                
+                                <div class="flex flex-col min-w-0">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                        Data Lampiran
+                                    </span>
+                                    
+                                    <div 
+                                        class="mt-0.5 truncate font-extrabold text-[var(--maroon)]"
+                                        x-text="data.lampiran !== '-' ? data.lampiran : 'Tidak ada berkas terlampir'"
+                                    ></div>
                                 </div>
                             </div>
-                            <input type="file" id="f_lampiran_input" hidden accept=".pdf,.jpg,.jpeg,.png">
                         </div>
-                        <input type="hidden" id="f_lampiran_text">
                     </div>
 
                     <div class="space-y-2">
                         <label class="text-xs font-extrabold text-slate-600">Tanggal Mulai</label>
-                        <input id="f_mulai" type="date" readonly class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" />
+                        <input  :value="data.mulai" type="date" readonly class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" />
                     </div>
                     <div class="space-y-2">
                         <label class="text-xs font-extrabold text-slate-600">Tanggal Selesai</label>
-                        <input id="f_selesai" type="date" readonly class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" />
+                        <input  :value="data.selesai" type="date" readonly class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" />
                     </div>
 
                     <div class="space-y-2">
                         <label class="text-xs font-extrabold text-slate-600">Alamat Selama Cuti</label>
-                        <input id="f_alamat" type="text" readonly class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" />
+                        <input  :value="data.alamat" type="text" readonly class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" />
                     </div>
                     <div class="space-y-2">
                         <label class="text-xs font-extrabold text-slate-600">No. Kontak</label>
-                        <input id="f_kontak" type="text" readonly class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" />
+                        <input  :value="data.kontak" type="text" readonly class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" />
                     </div>
                     <div class="space-y-2">
                         <label class="text-xs font-extrabold text-slate-600">No. Kontak Darurat</label>
-                        <input id="f_kontak_darurat" type="text" readonly class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" />
+                        <input 
+                            :value="data.kontakDarurat" 
+                            type="text" 
+                            readonly 
+                            class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" 
+                        />
                     </div>
                     <div class="space-y-2">
                         <label class="text-xs font-extrabold text-slate-600">Hubungan dengan yang Bersangkutan</label>
-                        <input id="f_hubungan_darurat" type="text" readonly class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" />
+                        <input 
+                            :value="data.hubunganDarurat" 
+                            type="text" 
+                            readonly 
+                            class="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm" 
+                        />
                     </div>
 
                     <div class="space-y-2 md:col-span-2">
                         <label class="text-xs font-extrabold text-slate-600">Alasan / Keterangan</label>
-                        <textarea id="f_alasan" readonly class="w-full min-h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm"></textarea>
+                        <textarea x-bind:value="data.alasan" readonly class="w-full min-h-[110px] rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm"></textarea>
                     </div>
 
                     <div class="space-y-2 md:col-span-2">
                         <label class="text-xs font-extrabold text-slate-600">Catatan Admin</label>
-                        <textarea id="f_catatan" readonly class="w-full min-h-[110px] rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm"></textarea>
+                        <textarea x-bind:value="data.catatan" readonly class="w-full min-h-[110px] rounded-xl border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm"></textarea>
                     </div>
                 </div>
             </div>
 
             <div class="px-6 py-4 border-t border-slate-100 bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <button class="px-5 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-extrabold text-slate-700" id="cancelBtn" type="button">Tutup</button>
+                <button @click="closeModal()" type="button" class="px-5 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-extrabold text-slate-700">
+                    Tutup
+                </button>
 
                 <div class="flex gap-2">
                     {{-- Tombol Download Surat (Hanya untuk approved) --}}
-                    <a href="#" data-download-url-template="{{ route('user.cuti.download', ['id' => '__ID__']) }}" id="btnDownloadSurat" class="hidden sm:inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-extrabold text-white bg-green-600 hover:bg-green-700 transition-all">
+                    <button 
+                        @click.prevent="downloadFile"
+                        x-show="status === 'Diterima'"
+                        class="sm:inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-extrabold text-white bg-green-600 hover:bg-green-700 transition-all"
+                    >
                         <i class="bi bi-download"></i>
                         Download Surat
-                    </a>
+                    </button>
                     
                     {{-- Tombol Edit (Hanya untuk rejected) --}}
-                    <a href="{{ route('user.cuti.create') }}" id="btnEditLink" class="hidden sm:inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-extrabold text-white btn-primary">
+                    <a  href="{{ route('user.cuti.create') }}" x-show="status === 'Ditolak'" class="sm:inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-extrabold text-white btn-primary">
                         <i class="bi bi-pencil-square"></i>
                         Perbaiki Pengajuan
                     </a>
@@ -256,125 +306,56 @@
             </div>
         </div>
     </div>
+</div>
 @endsection
 
 @push('scripts')
     <script>
-        // --- MODAL LOGIC (dipertahankan; hanya markup yang dirapikan) ---
-        const modal = document.getElementById("modal");
-        const closeBtn = document.getElementById("closeBtn");
-        const cancelBtn = document.getElementById("cancelBtn");
-        const modalTitle = document.getElementById("modalTitle");
-        const statusAlert = document.getElementById("statusAlert");
-        const dropArea = document.getElementById("drop-area");
-        const fileInput = document.getElementById("f_lampiran_input");
-        const fileNameDisplay = document.getElementById("file-name-display");
-        const dropTextLabel = document.getElementById("drop-text-label");
-        const btnEditLink = document.getElementById("btnEditLink");
-        const btnDownloadSurat = document.getElementById("btnDownloadSurat");
+        function leaveModal() {
+            return {
+                open: false,
+                data: {
+                    id: '',
+                    leaveId: '',
+                    status: '',
+                    jenis: '',
+                    mulai: '',
+                    selesai: '',
+                    alamat: '',
+                    kontak: '',
+                    kontakDarurat: '',
+                    hubunganDarurat: '',
+                    alasan: '',
+                    lampiran: '',
+                    catatan: ''
+                },
+                downloadUrl: '',
+                status: '',
 
-        const f = {
-            id: document.getElementById("f_id"),
-            status: document.getElementById("f_status"),
-            jenis: document.getElementById("f_jenis"),
-            lampiranText: document.getElementById("f_lampiran_text"),
-            mulai: document.getElementById("f_mulai"),
-            selesai: document.getElementById("f_selesai"),
-            alamat: document.getElementById("f_alamat"),
-            kontak: document.getElementById("f_kontak"),
-            kontakDarurat: document.getElementById("f_kontak_darurat"),
-            hubunganDarurat: document.getElementById("f_hubungan_darurat"),
-            alasan: document.getElementById("f_alasan"),
-            catatan: document.getElementById("f_catatan")
-        };
+                openModal(leaveData, url) {
+                    this.data = leaveData;
 
-        let activeBtn = null;
-        let activeData = null;
+                    this.downloadUrl = url;
+                    this.status = this.data.status;
+                    this.open = true;
+                    document.body.style.overflow = 'hidden';
+                    console.log(leaveData);
+                    console.log(this.data.kontakDarurat);
+                    console.log(this.data.hubunganDarurat);
+                },
 
-        function openModal(btn){
-            activeBtn = btn;
-            activeData = JSON.parse(btn.getAttribute("data-leave") || "{}");
+                closeModal() {
+                    this.open = false;
+                    document.body.style.overflow = '';
+                },
 
-            f.id.value = activeData.id || "";
-            f.status.value = activeData.status || "";
-            f.jenis.value = activeData.jenis || "Cuti Tahunan";
-            f.lampiranText.value = activeData.lampiran || "";
-            f.mulai.value = activeData.mulai || "";
-            f.selesai.value = activeData.selesai || "";
-            f.alamat.value = activeData.alamat || "";
-            f.kontak.value = activeData.kontak || "";
-            f.kontakDarurat.value = activeData.kontakDarurat || "";
-            f.hubunganDarurat.value = activeData.hubunganDarurat || "";
-            f.alasan.value = activeData.alasan || "";
-            f.catatan.value = activeData.catatan || "";
-            fileInput.value = "";
-
-            if(activeData.lampiran && activeData.lampiran !== "-"){
-                fileNameDisplay.innerHTML = `📎 ${activeData.lampiran}`;
-                dropTextLabel.textContent = "File saat ini:";
-            } else {
-                fileNameDisplay.innerHTML = "";
-                dropTextLabel.textContent = "Tidak ada lampiran.";
-            }
-
-            configureViewMode(activeData.status);
-            modal.classList.add("open");
-            document.body.style.overflow = "hidden";
-        }
-
-        function configureViewMode(status) {
-            const inputs = [f.jenis, f.mulai, f.selesai, f.alamat, f.kontak, f.kontakDarurat, f.hubunganDarurat, f.alasan];
-            inputs.forEach(inp => inp.disabled = true);
-            dropArea.classList.add('disabled');
-            fileInput.disabled = true;
-
-            btnEditLink.style.display = 'none';
-            btnDownloadSurat.style.display = 'none';
-            statusAlert.classList.add('hidden');
-
-            if (status === "Ditolak") {
-                modalTitle.textContent = "Detail Pengajuan (Ditolak)";
-                f.status.style.color = "#b42318";
-                statusAlert.classList.remove('hidden');
-                statusAlert.style.background = "#fde9ea";
-                statusAlert.style.color = "#b42318";
-                statusAlert.textContent = "Pengajuan ini ditolak. Silakan perbaiki data.";
-                btnEditLink.style.display = 'inline-flex';
-            } else if(status === "Diterima") {
-                modalTitle.textContent = "Detail Pengajuan";
-                f.status.style.color = "#1f7a46";
-                statusAlert.classList.remove('hidden');
-                statusAlert.style.background = "#e8f6ee";
-                statusAlert.style.color = "#1f7a46";
-                statusAlert.textContent = "Pengajuan ini telah disetujui.";
-                btnDownloadSurat.style.display = 'inline-flex';
-                // Set URL download dengan ID (hindari pakai variable Blade $leave di halaman list)
-                const leaveId = activeData.leaveId || activeBtn.closest('.h-card').getAttribute('data-leave-id');
-                if (leaveId) {
-                    const tpl = btnDownloadSurat.dataset.downloadUrlTemplate;
-                    btnDownloadSurat.href = tpl ? tpl.replace('__ID__', leaveId) : `/user/cuti/${leaveId}/download`;
+                downloadFile() {
+                    if (!this.downloadUrl) {
+                        alert('URL download tidak tersedia!');
+                        return;
+                    }
+                    window.open(this.downloadUrl, '_blank');
                 }
-            } else {
-                modalTitle.textContent = "Detail Pengajuan";
-                f.status.style.color = "#a56a00";
-                statusAlert.classList.remove('hidden');
-                statusAlert.style.background = "#fff2df";
-                statusAlert.style.color = "#a56a00";
-                statusAlert.textContent = "Pengajuan sedang dalam proses verifikasi.";
-            }
-        }
-
-        function closeModal(){
-            modal.classList.remove("open");
-            document.body.style.overflow = "";
-        }
-
-        closeBtn.addEventListener("click", closeModal);
-        cancelBtn.addEventListener("click", closeModal);
-
-        window.onclick = function(event) {
-            if (event.target === modal) {
-                closeModal();
             }
         }
     </script>
