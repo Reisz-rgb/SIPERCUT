@@ -205,14 +205,63 @@
                         </div>
                         
                         <div class="col-12 col-md-6">
-                            <label class="form-label">Alamat Email</label>
+                            <label class="form-label">
+                                Alamat Email
+                                <span class="text-muted fw-normal text-lowercase" style="font-size: 0.75rem;">(opsional)</span>
+                            </label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                <input type="email" name="email" class="form-control @error('email') is-invalid @enderror" 
-                                       value="{{ old('email', $pegawai->email) }}" placeholder="contoh@semarangkab.go.id" required>
+                                <input type="email" name="email"
+                                    class="form-control @error('email') is-invalid @enderror"
+                                    value="{{ old('email', $pegawai->email) }}"
+                                    placeholder="contoh@semarangkab.go.id">
                             </div>
+                            @if(empty($pegawai->email))
+                                <div class="d-flex align-items-center gap-1 mt-1">
+                                    <i class="bi bi-exclamation-circle-fill text-warning" style="font-size: 0.75rem;"></i>
+                                    <span class="text-warning small fw-semibold">Pegawai ini belum memiliki email — fitur lupa password tidak tersedia.</span>
+                                </div>
+                            @endif
                             @error('email') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                         </div>
+
+                        {{-- RESET PASSWORD MANUAL - hanya tampil jika email kosong --}}
+                        @if(empty($pegawai->email))
+                        <div class="col-12">
+                            <div class="p-4 rounded-3 border border-warning-subtle bg-warning-subtle">
+                                <div class="d-flex align-items-center gap-2 mb-3">
+                                    <i class="bi bi-shield-lock-fill text-warning fs-5"></i>
+                                    <div>
+                                        <div class="fw-bold text-dark" style="font-size: 0.9rem;">Reset Password Manual</div>
+                                        <div class="text-muted small">Pegawai ini tidak memiliki email, sehingga tidak bisa menggunakan fitur lupa password. Isi di sini jika perlu reset.</div>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label">Password Baru</label>
+                                        <input type="password" name="new_password" minlength="6"
+                                            class="form-control @error('new_password') is-invalid @enderror"
+                                            placeholder="Minimal 6 karakter (kosongkan jika tidak ingin reset)">
+                                        @error('new_password') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label">Konfirmasi Password Baru</label>
+                                        <input type="password" name="new_password_confirmation"
+                                            class="form-control"
+                                            placeholder="Ulangi password baru">
+                                    </div>
+                                </div>
+
+                                <div class="d-flex align-items-start gap-2 mt-3 p-2 bg-white rounded-2 border border-warning-subtle">
+                                    <i class="bi bi-info-circle text-warning mt-1" style="font-size: 0.8rem;"></i>
+                                    <span class="text-muted" style="font-size: 0.78rem; line-height: 1.5;">
+                                        Kosongkan kedua field ini jika tidak ingin mengubah password. Password hanya akan diubah jika kedua field diisi dan cocok.
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                         
                         <div class="col-12 col-md-6">
                             <label class="form-label">Nomor WhatsApp / Telepon</label>

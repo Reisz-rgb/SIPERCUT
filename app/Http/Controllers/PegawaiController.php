@@ -65,25 +65,41 @@ class PegawaiController extends Controller
         return view('admin.edit_pegawai', compact('pegawai'));
     }
 
-    public function update(UpdatePegawaiRequest $request, $id)
+    public function update(Request $request, User $pegawai)
     {
-        $pegawai = User::findOrFail($id);
-
-        $pegawai->update([
-            'name'               => $request->name,
-            'nip'                => $this->sanitizeNumeric($request->nip),
-            'phone'              => $this->sanitizeNumeric($request->phone),
-            'email'              => $request->email,
-            'jabatan'            => $request->jabatan,
-            'bidang_unit'        => $request->bidang_unit,
-            'join_date'          => $request->join_date,
-            'status'             => $request->status,
-            'annual_leave_quota' => $request->annual_leave_quota,
+        $request->validate([
+            'name'               => 'required|string|max:255',
+            'nip'                => 'required|numeric|unique:users,nip,' . $pegawai->id,
+            'email'              => 'nullable|email|unique:users,email,' . $pegawai->id,
+            'phone'              => 'nullable|string|max:20',
+            'jabatan'            => 'required|string|max:255',
+            'bidang_unit'        => 'required|string|max:255',
+            'status'             => 'required|in:aktif,nonaktif',
+            'join_date'          => 'nullable|date',
+            'annual_leave_quota' => 'nullable|integer|min:0',
         ]);
 
-        return redirect()
-            ->route('admin.kelola_pegawai')
-            ->with('success', 'Data pegawai berhasil diperbarui!');
+        $pegawai->update($request->only([
+            'name', 'nip', 'email', 'phone',
+            'jabatan', 'bidang_unit', 'status',
+            'join_date', 'annual_leave_quota',
+        ]));
+
+        if ($request->filled('new_password')) {
+            $request->validate([
+                'new_password' => 'string|min:6|confirmed',
+            ], [
+                'new_password.confirmed' => 'Konfirmasi password baru tidak cocok',
+                'new_password.min'       => 'Password minimal 6 karakter',
+            ]);
+
+            $pegawai->update([
+                'password' => Hash::make($request->new_password),
+            ]);
+        }
+
+        return redirect()->route('admin.kelola_pegawai')
+            ->with('success', "Data {$pegawai->name} berhasil diperbarui.");
     }
 
     public function destroy($id)
