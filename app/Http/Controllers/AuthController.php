@@ -42,27 +42,28 @@ class AuthController extends Controller
             'password' => $request->password,
         ];
 
-        if (Auth::attempt($credentials, $request->filled('remember'))) {
-            $request->session()->regenerate();
-
-            if (! Auth::user()->isActive()) {
-                Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-
-                return back()
-                    ->withErrors([
-                        'login' => 'Akun Anda tidak aktif. Silakan hubungi administrator.'
-                    ])
-                    ->withInput();
-            }
-
-            return $this->redirectBasedOnRole();
+        // Credentials salah
+        if (! Auth::attempt($credentials, $request->filled('remember'))) {
+            session()->flash('login_failed', true); // ← trigger throttle counter
+            return back()
+                ->withErrors(['login' => 'NIP atau password salah'])
+                ->withInput();
         }
 
-        return back()
-            ->withErrors(['login' => 'NIP atau password salah'])
-            ->withInput();
+        $request->session()->regenerate();
+
+        // Akun tidak aktif — ini BUKAN brute force, jangan di-throttle
+        if (! Auth::user()->isActive()) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return back()
+                ->withErrors(['login' => 'Akun Anda tidak aktif. Silakan hubungi administrator.'])
+                ->withInput();
+        }
+
+        return $this->redirectBasedOnRole();
     }
 
     public function showRegister()

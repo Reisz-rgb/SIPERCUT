@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Masuk - SIPERCUT</title>
 
-    {{-- Selaraskan dengan theme Admin/User (Bootstrap + Plus Jakarta + skema warna yang sama) --}}
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
@@ -188,20 +187,37 @@
             </div>
 
             <div class="auth-card-body">
-                @if ($errors->any())
-                    <div class="alert-mini mb-4">
-                        <div class="d-flex gap-2 align-items-start">
-                            <i class="bi bi-exclamation-triangle-fill" style="margin-top: 2px;"></i>
-                            <div>
-                                <ul class="mb-0 ps-3">
-                                    @foreach ($errors->all() as $error)
-                                        <li>{{ $error }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
+             {{-- Throttle warning (khusus) --}}
+            @if ($errors->has('throttle'))
+                <div class="alert-mini mb-4" style="background-color:#FFF7ED; border-color:#FED7AA; color:#92400E;">
+                    <div class="d-flex gap-2 align-items-start">
+                        <i class="bi bi-clock-history" style="margin-top:2px; flex-shrink:0;"></i>
+                        <div>{{ $errors->first('throttle') }}</div>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Error umum — KECUALIKAN throttle --}}
+            @if ($errors->hasAny(['nip', 'password', 'login']))
+                <div class="alert-mini mb-4">
+                    <div class="d-flex gap-2 align-items-start">
+                        <i class="bi bi-exclamation-triangle-fill" style="margin-top: 2px;"></i>
+                        <div>
+                            <ul class="mb-0 ps-3">
+                                @foreach ($errors->get('nip') as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                                @foreach ($errors->get('password') as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                                @foreach ($errors->get('login') as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
                         </div>
                     </div>
-                @endif
+                </div>
+            @endif
 
                 @if (session('success'))
                     <div class="alert border-0 bg-success bg-opacity-10 text-success rounded-4 p-3 mb-4" style="font-size: 0.9rem;">
@@ -209,7 +225,6 @@
                     </div>
                 @endif
 
-                {{-- DILARANG ubah name/action/logic. Hanya styling. --}}
                 <form action="{{ route('login.process') }}" method="POST">
                     @csrf
 
