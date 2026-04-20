@@ -39,9 +39,32 @@
                     <p class="text-[10px] font-extrabold text-slate-400 tracking-wider uppercase">Nama Lengkap</p>
                     <p class="text-slate-800 font-semibold text-base mt-1">{{ $authUser->name ?? '-' }}</p>
                 </div>
-                <div class="rounded-2xl border border-slate-100 bg-slate-50/40 p-5">
-                    <p class="text-[10px] font-extrabold text-slate-400 tracking-wider uppercase">Email</p>
-                    <p class="text-slate-800 font-semibold text-base mt-1">{{ $authUser->email ?? 'Belum diisi' }}</p>
+                <div class="rounded-2xl border p-5
+                    {{ empty($authUser->email)
+                        ? 'border-amber-200 bg-amber-50/60'
+                        : 'border-slate-100 bg-slate-50/40' }}">
+                    <p class="text-[10px] font-extrabold tracking-wider uppercase
+                        {{ empty($authUser->email) ? 'text-amber-500' : 'text-slate-400' }}">
+                        Email
+                    </p>
+
+                    @if(empty($authUser->email))
+                        <div class="flex items-center justify-between gap-3 mt-1">
+                            <div class="flex items-center gap-2">
+                                <i class="bi bi-exclamation-circle-fill text-amber-500 text-sm"></i>
+                                <p class="text-amber-700 font-semibold text-sm">Belum diisi</p>
+                            </div>
+                            <a href="{{ route('user.profil.edit') }}"
+                            class="text-[11px] font-extrabold text-amber-700 bg-amber-100 hover:bg-amber-200 px-3 py-1.5 rounded-lg border border-amber-200 transition">
+                                + Tambah Email
+                            </a>
+                        </div>
+                        <p class="text-[11px] text-amber-600 font-medium mt-2">
+                            Diperlukan untuk fitur lupa password.
+                        </p>
+                    @else
+                        <p class="text-slate-800 font-semibold text-base mt-1">{{ $authUser->email }}</p>
+                    @endif
                 </div>
                 <div class="rounded-2xl border border-slate-100 bg-slate-50/40 p-5">
                     <p class="text-[10px] font-extrabold text-slate-400 tracking-wider uppercase">No. HP</p>

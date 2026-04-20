@@ -29,6 +29,9 @@
                 <p class="text-gray-500 text-sm leading-relaxed px-4">
                     Masukkan alamat email anda yang terdaftar untuk menerima link reset password.
                 </p>
+                <p class="text-amber-600 text-xs mt-2 px-4">
+                    Jika akun Anda tidak memiliki email terdaftar, hubungi administrator sistem.
+                </p>
             </div>
 
             @if ($errors->any())

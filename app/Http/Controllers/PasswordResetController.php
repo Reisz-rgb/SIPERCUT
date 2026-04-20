@@ -28,12 +28,15 @@ class PasswordResetController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
-        // Gunakan generic response agar email valid/tidak valid tidak bocor ke publik
         if (!$user) {
             return redirect()->route('password.sent');
         }
 
-        // Generate token
+        if (empty($user->email)) {
+            return redirect()->route('password.request')
+                ->withErrors(['email' => 'Akun ini tidak memiliki email terdaftar. Hubungi administrator untuk reset password.']);
+        }
+
         $token = Str::random(64);
 
         DB::table('password_reset_tokens')->updateOrInsert(
@@ -44,13 +47,11 @@ class PasswordResetController extends Controller
             ]
         );
 
-        // Buat URL reset
         $resetUrl = route('password.reset', [
             'token' => $token,
             'email' => $request->email,
         ]);
 
-        // Kirim email
         Mail::to($user->email)->send(new ResetPasswordMail($resetUrl, $user->name));
 
         return redirect()->route('password.sent');

@@ -10,7 +10,24 @@
         $recent = $recentLeaves ?? $latestLeaves ?? [];
     @endphp
 
-    {{-- Welcome / CTA (mengikuti benchmark dashboard yang Anda kirim) --}}
+    @if(empty($authUser->email))
+        <div class="flex items-start gap-4 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 mb-2">
+            <div class="flex-shrink-0 w-9 h-9 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-600">
+                <i class="bi bi-envelope-exclamation-fill text-base"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-extrabold text-amber-800">Email belum ditambahkan</p>
+                <p class="text-xs text-amber-700 font-medium mt-0.5 leading-relaxed">
+                    Tanpa email, Anda tidak dapat menggunakan fitur <span class="font-bold">lupa password</span>. Lengkapi profil Anda sekarang.
+                </p>
+            </div>
+            <a href="{{ route('user.profil.edit') }}"
+            class="flex-shrink-0 text-xs font-extrabold text-amber-700 bg-amber-100 hover:bg-amber-200 border border-amber-300 px-3 py-2 rounded-xl transition whitespace-nowrap">
+                Isi Email
+            </a>
+        </div>
+    @endif
+
     <section class="bg-white border-0 rounded-[2.5rem] p-8 md:p-10 shadow-soft flex flex-col justify-center">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div class="flex-1">
