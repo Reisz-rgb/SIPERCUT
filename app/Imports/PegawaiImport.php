@@ -179,11 +179,13 @@ class PegawaiSheetImport implements ToCollection
         $nip = $this->digits($this->cell($row, $map['nip']));
 
         if (!$nip || strlen($nip) < 5) {
+            echo "Row {$rowNumber}: ✗ NIP tidak valid, skip.\n";
             $this->skipped++;
             return;
         }
 
         if (User::where('nip', $nip)->exists()) {
+            echo "Row {$rowNumber}: ✗ NIP {$nip} sudah ada, skip.\n";
             $this->skipped++;
             return;
         }
@@ -191,56 +193,52 @@ class PegawaiSheetImport implements ToCollection
         $nama = $this->cell($row, $map['nama']) ?? 'Tanpa Nama';
 
         User::create([
-            'name' => $nama,
-            'nip' => $nip,
-            'phone' => $this->generatePhone(
-                $this->cell($row, $map['phone']),
-                $nip
-            ),
-            'password' => Hash::make($nip),
-            'role' => 'user',
-            'gender' => $this->parseGender($this->cell($row, $map['gender'])),
+            'name'             => $nama,
+            'nip'              => $nip,
+            'phone'            => $this->generatePhone($this->cell($row, $map['phone']), $nip),
+            'password'         => Hash::make($nip),
+            'role'             => 'user',
+            'gender'           => $this->parseGender($this->cell($row, $map['gender'])),
             'pangkat_golongan' => $this->cell($row, $map['pangkat_golongan']),
-            'bidang_unit' => $this->cell($row, $map['bidang_unit']),
-            'jabatan' => $this->cell($row, $map['jabatan']),
-            'pendidikan' => $this->cell($row, $map['pendidikan']),
-            'usia' => $this->parseUsia($this->cell($row, $map['usia'])),
-            
-            // Kolom baru
-            'status' => 'aktif',
+            'bidang_unit'      => $this->cell($row, $map['bidang_unit']),
+            'jabatan'          => $this->cell($row, $map['jabatan']),
+            'pendidikan'       => $this->cell($row, $map['pendidikan']),
+            'usia'             => $this->parseUsia($this->cell($row, $map['usia'])),
+            'status'           => 'aktif',
             'annual_leave_quota' => 12,
-            'join_date' => now()->subYears(rand(1, 10)), // Random untuk data import
+            'join_date'        => now()->subYears(rand(1, 10)),
         ]);
 
         echo "Row {$rowNumber}: ✓ {$nama}\n";
         $this->imported++;
     }
 
+    private function digits(?string $value): string
+    {
+        if ($value === null) return '';
+        return preg_replace('/[^0-9]/', '', $value);
+    }
 
-    /**
-     * Generate unique phone number
-     */
     private function generatePhone($phoneData, string $nip)
     {
         if (!empty($phoneData)) {
-            $phone = preg_replace('/[^0-11]/', '', $phoneData);
-            
+            $phone = preg_replace('/[^0-9]/', '', $phoneData); // FIX: was [^0-11]
+
             if (strlen($phone) >= 10 && strlen($phone) <= 15) {
                 if (!str_starts_with($phone, '0')) {
                     $phone = '0' . $phone;
                 }
-                
+
                 if (!User::where('phone', $phone)->exists()) {
                     return $phone;
                 }
             }
         }
 
-        // Generate dari NIP
         $suffix = substr($nip, -8);
-        $phone = '0812' . str_pad($suffix, 8, '0', STR_PAD_LEFT);
+        $phone  = '0812' . str_pad($suffix, 8, '0', STR_PAD_LEFT);
 
-        $counter = 1;
+        $counter      = 1;
         $originalPhone = $phone;
         while (User::where('phone', $phone)->exists()) {
             $phone = substr($originalPhone, 0, -1) . $counter;
