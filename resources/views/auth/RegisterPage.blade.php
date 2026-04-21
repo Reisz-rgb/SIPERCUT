@@ -183,18 +183,29 @@
             </div>
 
             <div class="auth-card-body">
-                @if ($errors->any())
-                    <div class="alert-mini mb-4">
-                        <div class="d-flex gap-2 align-items-start">
-                            <i class="bi bi-exclamation-triangle-fill" style="margin-top: 2px;"></i>
-                            <div>
-                                @foreach ($errors->all() as $error)
+            @if ($errors->has('throttle'))
+                <div class="alert-mini mb-4" style="background-color:#FFF7ED; border-color:#FED7AA; color:#92400E;">
+                    <div class="d-flex gap-2 align-items-start">
+                        <i class="bi bi-clock-history" style="margin-top:2px; flex-shrink:0;"></i>
+                        <div>{{ $errors->first('throttle') }}</div>
+                    </div>
+                </div>
+            @endif
+
+            @if ($errors->hasAny(['name','nip','phone','email','bidang_unit','jabatan','password']))
+                <div class="alert-mini mb-4">
+                    <div class="d-flex gap-2 align-items-start">
+                        <i class="bi bi-exclamation-triangle-fill" style="margin-top: 2px;"></i>
+                        <div>
+                            @foreach (['name','nip','phone','email','bidang_unit','jabatan','password'] as $field)
+                                @foreach ($errors->get($field) as $error)
                                     <div>{{ $error }}</div>
                                 @endforeach
-                            </div>
+                            @endforeach
                         </div>
                     </div>
-                @endif
+                </div>
+            @endif
 
                 <div class="alert border-0 rounded-4 p-3 mb-4" style="background: #E7F1FF; color: #0C5460; border: 1px solid #B3D7FF;">
                     <div class="d-flex gap-2">

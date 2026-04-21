@@ -27,13 +27,15 @@ Route::middleware(['guest', 'no.cache'])->group(function () {
 
     Route::get('/login',  [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])
-    ->middleware('throttle.login')
-    ->name('login.process');
+            ->middleware('throttle.login')
+            ->name('login.process');
     
     Route::get('/register',  [AuthController::class, 'showRegister'])->name('register');
-    Route::post('/register', [AuthController::class, 'register'])->name('register.process');
+    Route::post('/register', [AuthController::class, 'register'])
+            ->middleware('throttle.register')
+            ->name('register.process');
 
-    Route::get('/panduan-login', fn () => view('auth.PanduanLogin'))->name('panduan.login');
+    Route::get('/register-success', fn () => view('auth.RegisterSuccess'))->name('register.success');
 
     // Password reset
     Route::get('/lupa-password',  [PasswordResetController::class, 'showForgotPassword'])->name('password.request');
@@ -52,7 +54,6 @@ Route::middleware(['guest', 'no.cache'])->group(function () {
 Route::middleware(['auth', 'active.user', 'no.cache'])->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-    Route::get('/register-success', fn () => view('auth.RegisterSuccess'))->name('register.success');
 });
 
 /*

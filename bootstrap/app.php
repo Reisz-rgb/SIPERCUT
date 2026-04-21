@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
             'clean.output' => \App\Http\Middleware\CleanOutputBuffer::class,
             'throttle.login' => \App\Http\Middleware\ThrottleLogin::class,
+            'throttle.register' => \App\Http\Middleware\ThrottleRegister::class,
             'no.cache' => \App\Http\Middleware\NoCache::class,
             'active.user' => \App\Http\Middleware\ActiveUserMiddleware::class,
         ]);

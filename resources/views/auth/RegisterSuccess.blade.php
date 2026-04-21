@@ -40,13 +40,13 @@
             </div>
 
             <ul class="list-disc list-outside ml-6 text-gray-500 space-y-3 text-sm mb-12">
-                <li>Login menggunakan akun yang telah Anda daftarkan.</li>
-                <li>Pastikan data Anda sudah sesuai.</li>
+                <li>Akun Anda telah terdaftar dan sedang menunggu aktivasi oleh administrator.</li>
+                <li>Anda akan dapat login setelah akun diaktifkan.</li>
             </ul>
 
             <div class="absolute bottom-8 right-8">
-                <a href="{{ url('/user/dashboard') }}" class="bg-[#9E2A2B] text-white px-6 py-2 rounded shadow hover:bg-red-800 transition text-sm font-semibold">
-                    Masuk ke Dashboard
+                <a href="{{ route('login') }}" class="bg-[#9E2A2B] text-white px-6 py-2 rounded shadow hover:bg-red-800 transition text-sm font-semibold">
+                    Kembali Ke Login
                 </a>
             </div>
         </div>

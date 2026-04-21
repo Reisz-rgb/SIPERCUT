@@ -52,7 +52,6 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        // Akun tidak aktif — ini BUKAN brute force, jangan di-throttle
         if (! Auth::user()->isActive()) {
             Auth::logout();
             $request->session()->invalidate();
@@ -117,6 +116,19 @@ class AuthController extends Controller
             'password.confirmed'   => 'Konfirmasi password tidak cocok',
         ]);
 
+            try {
+                $request->validate([
+                    'nip'      => 'required|string',
+                    'password' => 'required|string',
+                ], [
+                    'nip.required'      => 'NIP wajib diisi',
+                    'password.required' => 'Password wajib diisi',
+                ]);
+                } catch (\Illuminate\Validation\ValidationException $e) {
+                    session()->flash('register_failed', true); // ← trigger throttle counter
+                    throw $e; 
+                }
+
         $user = User::create([
             'name'        => $request->name,
             'nip'         => $this->sanitizeNumeric($request->nip),
@@ -126,11 +138,8 @@ class AuthController extends Controller
             'jabatan'     => $request->jabatan,
             'password'    => Hash::make($request->password),
             'role'        => 'user',
-            'status'      => 'aktif',
+            'status'      => 'nonaktif',
         ]);
-
-        Auth::login($user);
-        $request->session()->regenerate();
 
         return redirect()->route('register.success');
     }
