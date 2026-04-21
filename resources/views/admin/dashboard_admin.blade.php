@@ -81,6 +81,19 @@
                         <div class="small text-danger mt-2">Tidak disetujui</div>
                     </div>
                 </div>
+
+                <div class="col-12 col-sm-6 col-xl-3">
+                    <div class="card-stat">
+                        <div class="stat-icon" style="background: #FFF7ED; color: #D97706;">
+                            <i class="bi bi-person-check"></i>
+                        </div>
+                        <div class="text-muted small fw-bold text-uppercase">Menunggu Aktivasi</div>
+                        <div class="fs-2 fw-bold text-dark mt-1">{{ $pendingActivation->count() }}</div>
+                        <div class="small mt-2" style="color: #D97706;">
+                            <i class="bi bi-clock me-1"></i> Perlu diaktifkan
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="row g-4">
@@ -134,6 +147,72 @@
                 </div>
             </div>
 
+            {{-- Panel Aktivasi Akun --}}
+            @if($pendingActivation->count() > 0)
+            <div class="row g-4 mt-0">
+                <div class="col-12">
+                    <div class="card-content">
+                        <div class="card-header-custom bg-white d-flex justify-content-between align-items-center">
+                            <h6 class="m-0 fw-bold text-dark">
+                                <i class="bi bi-person-check me-2" style="color: #D97706;"></i>
+                                Akun Menunggu Aktivasi
+                                <span class="badge rounded-pill ms-1" style="background:#FFF7ED; color:#D97706; border: 1px solid #FED7AA;">
+                                    {{ $pendingActivation->count() }}
+                                </span>
+                            </h6>
+                            <a href="{{ route('admin.kelola_pegawai') }}" class="small text-decoration-none fw-bold" style="color: var(--primary);">
+                                Kelola Pegawai
+                            </a>
+                        </div>
+
+                        <div class="list-group list-group-flush">
+                            @foreach($pendingActivation as $u)
+                            <div class="list-item-custom d-flex gap-3 align-items-center">
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center flex-shrink-0 fw-bold"
+                                    style="width: 42px; height: 42px; color: #64748B;">
+                                    {{ substr($u->name, 0, 1) }}
+                                </div>
+
+                                <div style="flex: 1; min-width: 0;">
+                                    <div class="fw-bold text-dark text-truncate">{{ $u->name }}</div>
+                                    <div class="small text-muted">
+                                        {{ $u->nip }}
+                                        @if($u->bidang_unit)
+                                            &bull; {{ $u->bidang_unit }}
+                                        @endif
+                                    </div>
+                                    <div class="small text-muted">
+                                        Mendaftar: {{ $u->created_at->diffForHumans() }}
+                                    </div>
+                                </div>
+
+                                <div class="d-flex gap-2">
+                                    {{-- Tombol Aktifkan --}}
+                                    <form action="{{ route('admin.pegawai.activate', $u->id) }}" method="POST">
+                                        @csrf
+                                        <button type="button"
+                                            onclick="konfirmasiAktivasi(this.form, '{{ addslashes($u->name) }}')"
+                                            class="btn btn-sm fw-bold px-3 rounded-pill"
+                                            style="background:#F0FDF4; color:#15803D; border: 1px solid #DCFCE7;">
+                                            <i class="bi bi-check-lg me-1"></i>Aktifkan
+                                        </button>
+                                    </form>
+
+                                    {{-- Tombol Edit (jika perlu cek data dulu) --}}
+                                    <a href="{{ route('admin.pegawai.edit', $u->id) }}"
+                                    class="btn btn-sm fw-bold px-3 rounded-pill"
+                                    style="background:#F8FAFC; color:#64748B; border: 1px solid #E2E8F0;">
+                                        <i class="bi bi-pencil-square me-1"></i>Edit
+                                    </a>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+
             <div class="mt-5 text-center">
                 <p class="text-muted small opacity-50">&copy; 2026 Pemerintah Kabupaten Semarang. Hak Cipta Dilindungi.</p>
             </div>
@@ -142,9 +221,10 @@
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-// Chart Configuration
+        // Chart Configuration
         const ctx = document.getElementById('statsChart').getContext('2d');
         const labels = @json($chartLabels ?? ['Jan', 'Feb', 'Mar']);
         const approvedData = @json($dataApproved ?? [0, 0, 0]);
@@ -182,5 +262,21 @@
                 }
             }
         });
+
+        function konfirmasiAktivasi(form, nama) {
+            Swal.fire({
+                title: 'Aktifkan Akun?',
+                html: `Akun <strong>${nama}</strong> akan diaktifkan dan dapat login ke sistem.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#15803D',
+                cancelButtonColor: '#64748B',
+                confirmButtonText: 'Ya, Aktifkan',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+            }).then((result) => {
+                if (result.isConfirmed) form.submit();
+            });
+        }
 </script>
 @endpush

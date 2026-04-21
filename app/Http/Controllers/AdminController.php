@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 
 class AdminController extends Controller
@@ -82,28 +83,34 @@ class AdminController extends Controller
         $totalPegawai = User::where('role', 'user')->count();
         $listPegawai  = User::where('role', 'user')->orderBy('name')->get();
 
+        $pendingActivation = User::where('role', 'user')
+            ->where('status', 'nonaktif')
+            ->latest()
+            ->get();
+
         if (!Schema::hasTable('leave_requests')) {
-            return $this->dashboardEmptyResponse($totalPegawai, $listPegawai);
+            return $this->dashboardEmptyResponse($totalPegawai, $listPegawai, $pendingActivation);
         }
 
-        $stats           = $this->getLeaveStats();
-        $pendingRequests = $this->getLatestPendingRequests();
+        $stats            = $this->getLeaveStats();
+        $pendingRequests  = $this->getLatestPendingRequests();
         $recentActivities = $this->getRecentActivities();
         [$chartLabels, $dataApproved, $dataRejected, $dataPending] = $this->getChartData();
 
         return view('admin.dashboard_admin', [
-            'totalPengajuan'   => $stats->total,
-            'disetujui'        => $stats->approved,
-            'menunggu'         => $stats->pending,
-            'ditolak'          => $stats->rejected,
-            'totalPegawai'     => $totalPegawai,
-            'pendingRequests'  => $pendingRequests,
-            'recentActivities' => $recentActivities,
-            'listPegawai'      => $listPegawai,
-            'chartLabels'      => $chartLabels,
-            'dataApproved'     => $dataApproved,
-            'dataRejected'     => $dataRejected,
-            'dataPending'      => $dataPending,
+            'totalPengajuan'    => $stats->total,
+            'disetujui'         => $stats->approved,
+            'menunggu'          => $stats->pending,
+            'ditolak'           => $stats->rejected,
+            'totalPegawai'      => $totalPegawai,
+            'pendingRequests'   => $pendingRequests,
+            'recentActivities'  => $recentActivities,
+            'listPegawai'       => $listPegawai,
+            'chartLabels'       => $chartLabels,
+            'dataApproved'      => $dataApproved,
+            'dataRejected'      => $dataRejected,
+            'dataPending'       => $dataPending,
+            'pendingActivation' => $pendingActivation,
         ]);
     }
 
@@ -242,6 +249,14 @@ class AdminController extends Controller
         };
     }
 
+    public function activateUser(int $id)
+    {
+        $user = User::where('role', 'user')->findOrFail($id);
+        $user->update(['status' => 'aktif']);
+
+        return back()->with('success', "Akun {$user->name} berhasil diaktifkan.");
+    }
+
     /**
      * Hitung persentase, safe dari division by zero.
      */
@@ -353,6 +368,7 @@ class AdminController extends Controller
             'dataApproved'     => [],
             'dataRejected'     => [],
             'dataPending'      => [],
+            'pendingActivation' => $pendingActivation ?? collect(),
         ]);
     }
 }

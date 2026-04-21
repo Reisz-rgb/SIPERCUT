@@ -270,10 +270,25 @@
                                 </td>
                                 <td class="pe-4">
                                     <div class="d-flex justify-content-end gap-2">
+                                        @if($p->status === 'nonaktif')
+                                        <form id="activate-form-{{ $p->id }}"
+                                            action="{{ route('admin.pegawai.activate', $p->id) }}"
+                                            method="POST">
+                                            @csrf
+                                            <button type="button"
+                                                onclick="konfirmasiAktivasi(document.getElementById('activate-form-{{ $p->id }}'), '{{ addslashes($p->name) }}')"
+                                                class="btn-action"
+                                                title="Aktifkan Akun"
+                                                style="border-color: #DCFCE7; color: #15803D; background: #F0FDF4;">
+                                                <i class="bi bi-person-check"></i>
+                                            </button>
+                                        </form>
+                                        @endif
+
                                         <a href="{{ route('admin.pegawai.edit', $p->id) }}" class="btn-action" title="Edit Data">
                                             <i class="bi bi-pencil-square"></i>
                                         </a>
-                                        
+
                                         <form id="delete-form-{{ $p->id }}" action="{{ route('admin.pegawai.destroy', $p->id) }}" method="POST">
                                             @csrf
                                             @method('DELETE')
@@ -319,7 +334,6 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
-// --- 2. SCRIPT DELETE CONFIRMATION ---
         function konfirmasiHapus(id) {
             Swal.fire({
                 title: 'Hapus Data Pegawai?',
@@ -337,6 +351,22 @@
                     document.getElementById('delete-form-' + id).submit();
                 }
             })
+        }
+
+        function konfirmasiAktivasi(form, nama) {
+            Swal.fire({
+                title: 'Aktifkan Akun?',
+                html: `Akun <strong>${nama}</strong> akan diaktifkan dan dapat login ke sistem.`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#15803D',
+                cancelButtonColor: '#64748B',
+                confirmButtonText: 'Ya, Aktifkan',
+                cancelButtonText: 'Batal',
+                reverseButtons: true,
+            }).then((result) => {
+                if (result.isConfirmed) form.submit();
+            });
         }
 </script>
 @endpush

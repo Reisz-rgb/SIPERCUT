@@ -125,4 +125,5 @@ Route::middleware(['auth', 'active.user', 'admin'])
         Route::put('/pegawai/{id}',              [PegawaiController::class, 'update'])->name('pegawai.update');
         Route::delete('/pegawai/{id}',           [PegawaiController::class, 'destroy'])->name('pegawai.destroy');
         Route::post('/pegawai/{id}/reset-password', [PegawaiController::class, 'resetPassword'])->name('pegawai.reset_password');
+        Route::post('/pegawai/{id}/activate', [AdminController::class, 'activateUser'])->name('pegawai.activate');
     });
