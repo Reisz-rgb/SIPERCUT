@@ -58,6 +58,7 @@
         margin-bottom: 6px;
         text-transform: uppercase;
     }
+
     .laporan-page .form-control-custom,
     .laporan-page .form-select-custom {
         border: 1px solid #E2E8F0;
@@ -89,20 +90,12 @@
         transition: 0.2s;
         height: 42px;
     }
-    .laporan-page .btn-pdf { background-color: #FEF2F2; color: #991B1B; border: 1px solid #FCA5A5; }
-    .laporan-page .btn-pdf:hover { background-color: #FEE2E2; transform: translateY(-2px); }
-    .laporan-page .btn-excel { background-color: #ECFDF5; color: #065F46; border: 1px solid #6EE7B7; }
+    .laporan-page .btn-pdf         { background-color: #FEF2F2; color: #991B1B; border: 1px solid #FCA5A5; }
+    .laporan-page .btn-pdf:hover   { background-color: #FEE2E2; transform: translateY(-2px); }
+    .laporan-page .btn-excel       { background-color: #ECFDF5; color: #065F46; border: 1px solid #6EE7B7; }
     .laporan-page .btn-excel:hover { background-color: #D1FAE5; transform: translateY(-2px); }
 
-    .laporan-page .btn-search {
-        background-color: var(--primary);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        padding: 0 20px;
-        font-weight: 600;
-        transition: 0.2s;
-    }
+    .laporan-page .btn-search       { background-color: var(--primary); color: white; border: none; border-radius: 10px; padding: 0 20px; font-weight: 600; transition: 0.2s; }
     .laporan-page .btn-search:hover { background-color: var(--primary-dark); }
 
     /* --- STAT CARDS --- */
@@ -119,6 +112,7 @@
         transform: translateY(-5px);
         box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
+
     .laporan-page .stat-icon-wrapper {
         width: 48px;
         height: 48px;
@@ -129,6 +123,7 @@
         font-size: 1.5rem;
         margin-bottom: 16px;
     }
+
     .laporan-page .stat-label {
         font-size: 0.85rem;
         color: #64748B;
@@ -136,6 +131,7 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
+
     .laporan-page .stat-value {
         font-size: 2rem;
         font-weight: 800;
@@ -151,6 +147,7 @@
         color: #1E293B;
         margin-bottom: 20px;
     }
+
     .laporan-page .progress-custom {
         height: 10px;
         border-radius: 20px;
@@ -175,6 +172,7 @@
         border-bottom: 1px solid #F1F5F9;
         font-size: 0.9rem;
     }
+
     .laporan-page .badge-stat {
         padding: 6px 12px;
         border-radius: 8px;
@@ -194,11 +192,12 @@
         border: none;
         margin-right: 15px;
     }
+
     @media (max-width: 992px) {
-        .laporan-page .hero-banner { padding: 20px 20px 80px 20px; }
+        .laporan-page .hero-banner        { padding: 20px 20px 80px 20px; }
         .laporan-page .dashboard-container { padding: 0 20px 20px; }
-        .laporan-page .mobile-toggler { display: block; }
-        .laporan-page .stat-value { font-size: 1.75rem; }
+        .laporan-page .mobile-toggler     { display: block; }
+        .laporan-page .stat-value         { font-size: 1.75rem; }
     }
 </style>
 @endpush
@@ -224,7 +223,8 @@
 
             <div class="dropdown">
                 <div class="glass-profile" data-bs-toggle="dropdown">
-                    <div class="rounded-circle bg-white text-danger fw-bold d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                    <div class="rounded-circle bg-white text-danger fw-bold d-flex align-items-center justify-content-center"
+                         style="width: 32px; height: 32px;">
                         {{ substr(Auth::user()->name ?? 'A', 0, 1) }}
                     </div>
                     <span class="d-none d-md-block small fw-medium">{{ Auth::user()->name ?? 'Admin' }}</span>
@@ -259,8 +259,8 @@
                     <div class="col-12 col-md-3">
                         <label class="form-label-custom">Periode Waktu</label>
                         <select name="filter" class="form-select-custom w-100" onchange="this.form.submit()">
-                            <option value="1_bulan" {{ $filter == '1_bulan' ? 'selected' : '' }}>1 Bulan Terakhir</option>
-                            <option value="3_bulan" {{ $filter == '3_bulan' ? 'selected' : '' }}>3 Bulan Terakhir</option>
+                            <option value="1_bulan"   {{ $filter == '1_bulan'   ? 'selected' : '' }}>1 Bulan Terakhir</option>
+                            <option value="3_bulan"   {{ $filter == '3_bulan'   ? 'selected' : '' }}>3 Bulan Terakhir</option>
                             <option value="tahun_ini" {{ $filter == 'tahun_ini' ? 'selected' : '' }}>Tahun Ini (Jan-Des)</option>
                         </select>
                     </div>
@@ -271,7 +271,7 @@
                             <option value="">Semua Bidang</option>
                             @if(isset($listBidang))
                                 @foreach($listBidang as $bidang)
-                                    @if($bidang) 
+                                    @if($bidang)
                                         <option value="{{ $bidang }}" {{ request('bidang_unit') == $bidang ? 'selected' : '' }}>
                                             {{ $bidang }}
                                         </option>
@@ -284,12 +284,14 @@
                     <div class="col-12 col-md-3">
                         <label class="form-label-custom">Cari Nama Pegawai</label>
                         <div class="input-group">
-                            <span class="input-group-text bg-light border-end-0" style="border-radius: 10px 0 0 10px; border-color: #E2E8F0;">
+                            <span class="input-group-text bg-light border-end-0"
+                                  style="border-radius: 10px 0 0 10px; border-color: #E2E8F0;">
                                 <i class="bi bi-search text-muted"></i>
                             </span>
-                            <input type="text" name="search" class="form-control form-control-custom border-start-0 ps-0"
-                                   placeholder="Ketik nama lalu Enter..." 
-                                   value="{{ request('search') }}" 
+                            <input type="text" name="search"
+                                   class="form-control form-control-custom border-start-0 ps-0"
+                                   placeholder="Ketik nama lalu Enter..."
+                                   value="{{ request('search') }}"
                                    style="border-radius: 0 10px 10px 0;">
                         </div>
                     </div>
@@ -301,12 +303,24 @@
                             </button>
 
                             <div class="dropdown">
-                                <button class="btn btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown" style="height: 42px; border-radius: 10px;">
+                                <button class="btn btn-light border dropdown-toggle" type="button"
+                                        data-bs-toggle="dropdown"
+                                        style="height: 42px; border-radius: 10px;">
                                     <i class="bi bi-download"></i>
                                 </button>
                                 <ul class="dropdown-menu shadow-sm border-0">
-                                    <li><a class="dropdown-item small" href="{{ route('admin.download.pdf', request()->all()) }}"><i class="bi bi-file-pdf text-danger me-2"></i>Export PDF</a></li>
-                                    <li><a class="dropdown-item small" href="{{ route('admin.download.excel', request()->all()) }}"><i class="bi bi-file-excel text-success me-2"></i>Export Excel</a></li>
+                                    <li>
+                                        <a class="dropdown-item small"
+                                           href="{{ route('admin.download.pdf', request()->all()) }}">
+                                            <i class="bi bi-file-pdf text-danger me-2"></i>Export PDF
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item small"
+                                           href="{{ route('admin.download.excel', request()->all()) }}">
+                                            <i class="bi bi-file-excel text-success me-2"></i>Export Excel
+                                        </a>
+                                    </li>
                                 </ul>
                             </div>
                         </div>
@@ -416,21 +430,21 @@
                     </thead>
                     <tbody>
                         @forelse($unitStats as $stat)
-                        <tr>
-                            <td class="ps-4 fw-bold text-dark">{{ $stat['name'] }}</td>
-                            <td class="text-center"><span class="badge-stat" style="background: #ECFDF5; color: #059669;">{{ $stat['approved'] }}</span></td>
-                            <td class="text-center"><span class="badge-stat" style="background: #FEF2F2; color: #DC2626;">{{ $stat['rejected'] }}</span></td>
-                            <td class="text-center"><span class="badge-stat" style="background: #FFFBEB; color: #D97706;">{{ $stat['pending'] }}</span></td>
-                            <td class="text-center fw-bold">{{ $stat['total'] }}</td>
-                            <td class="text-end pe-4 fw-bold text-success">{{ $stat['rate'] }}%</td>
-                        </tr>
+                            <tr>
+                                <td class="ps-4 fw-bold text-dark">{{ $stat['name'] }}</td>
+                                <td class="text-center"><span class="badge-stat" style="background: #ECFDF5; color: #059669;">{{ $stat['approved'] }}</span></td>
+                                <td class="text-center"><span class="badge-stat" style="background: #FEF2F2; color: #DC2626;">{{ $stat['rejected'] }}</span></td>
+                                <td class="text-center"><span class="badge-stat" style="background: #FFFBEB; color: #D97706;">{{ $stat['pending'] }}</span></td>
+                                <td class="text-center fw-bold">{{ $stat['total'] }}</td>
+                                <td class="text-end pe-4 fw-bold text-success">{{ $stat['rate'] }}%</td>
+                            </tr>
                         @empty
-                        <tr>
-                            <td colspan="6" class="text-center py-5 text-muted">
-                                <i class="bi bi-inbox fs-1 opacity-25"></i>
-                                <p class="small mt-2">Tidak ada data yang sesuai dengan filter Anda.</p>
-                            </td>
-                        </tr>
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 opacity-25"></i>
+                                    <p class="small mt-2">Tidak ada data yang sesuai dengan filter Anda.</p>
+                                </td>
+                            </tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -451,20 +465,20 @@
 
 <script>
     $(document).ready(function() {
-        
+
         $('#selectBidang').select2({
             theme: 'bootstrap-5',
             width: '100%',
             placeholder: 'Cari atau Pilih Bidang...',
             allowClear: true,
-            dropdownParent: $('#selectBidang').parent() 
+            dropdownParent: $('#selectBidang').parent()
         });
 
         $('#selectBidang').on('select2:select select2:clear', function(e) {
             $(this).closest('form').submit();
         });
 
-        const labels = {!! json_encode($chartLabels) !!};
+        const labels     = {!! json_encode($chartLabels) !!};
         const dataValues = {!! json_encode($chartValues) !!};
 
         const ctx = document.getElementById('jenisCutiChart').getContext('2d');
@@ -474,7 +488,7 @@
                 labels: labels.length ? labels : ['Belum ada data'],
                 datasets: [{
                     data: dataValues.length ? dataValues : [1],
-                    backgroundColor: ['#10B981','#F59E0B','#EF4444','#3B82F6','#6B7280','#8B5CF6'],
+                    backgroundColor: ['#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#6B7280', '#8B5CF6'],
                     borderWidth: 0,
                     hoverOffset: 10
                 }]
