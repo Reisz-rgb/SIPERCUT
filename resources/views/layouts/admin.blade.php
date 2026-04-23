@@ -19,13 +19,13 @@
     <style>
         /* ── Design Tokens ── */
         :root {
-            --primary:        #9E2A2B;
-            --primary-dark:   #781F1F;
-            --secondary:      #64748B;
-            --bg-body:        #F1F5F9;
-            --sidebar-width:  270px;
-            --radius-card:    16px;
-            --shadow-card:    0 10px 25px -5px rgba(0,0,0,.06);
+            --primary:       #9E2A2B;
+            --primary-dark:  #781F1F;
+            --secondary:     #64748B;
+            --bg-body:       #F1F5F9;
+            --sidebar-width: 270px;
+            --radius-card:   16px;
+            --shadow-card:   0 10px 25px -5px rgba(0,0,0,.06);
         }
 
         /* ── Base ── */
@@ -36,9 +36,9 @@
             overflow-x: hidden;
         }
 
-        ::-webkit-scrollbar         { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track   { background: transparent; }
-        ::-webkit-scrollbar-thumb   { background: #CBD5E1; border-radius: 10px; }
+        ::-webkit-scrollbar             { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track       { background: transparent; }
+        ::-webkit-scrollbar-thumb       { background: #CBD5E1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
 
         /* ── Sidebar ── */
@@ -75,9 +75,9 @@
             transition: all .2s; margin-bottom: 4px;
             text-decoration: none;
         }
-        .nav-link:hover                     { background: #FEF2F2; color: var(--primary); }
-        .nav-link.active                    { background: linear-gradient(90deg, var(--primary), var(--primary-dark)); color: #fff; box-shadow: 0 4px 12px rgba(158,42,43,.3); }
-        .nav-link.active i                  { color: #fff; }
+        .nav-link:hover      { background: #FEF2F2; color: var(--primary); }
+        .nav-link.active     { background: linear-gradient(90deg, var(--primary), var(--primary-dark)); color: #fff; box-shadow: 0 4px 12px rgba(158,42,43,.3); }
+        .nav-link.active i   { color: #fff; }
 
         /* ── Layout ── */
         .main-content { margin-left: var(--sidebar-width); min-height: 100vh; }
@@ -164,12 +164,12 @@
 
         /* ── Responsive ── */
         @media (max-width: 992px) {
-            .sidebar         { transform: translateX(-100%); }
-            .sidebar.show    { transform: translateX(0); }
-            .main-content    { margin-left: 0; }
-            .hero-banner     { border-radius: 0; padding: 20px; height: auto; padding-bottom: 100px; }
-            .dashboard-container { padding: 0 20px 20px; }
-            .mobile-toggler  { display: block; }
+            .sidebar              { transform: translateX(-100%); }
+            .sidebar.show         { transform: translateX(0); }
+            .main-content         { margin-left: 0; }
+            .hero-banner          { border-radius: 0; padding: 20px; height: auto; padding-bottom: 100px; }
+            .dashboard-container  { padding: 0 20px 20px; }
+            .mobile-toggler       { display: block; }
         }
     </style>
 
@@ -182,6 +182,7 @@
 
 {{-- Sidebar --}}
 <nav class="sidebar" id="sidebar">
+
     <a href="{{ route('admin.dashboard') }}" class="sidebar-brand">
         <img src="{{ asset('logokabupatensemarang.png') }}" alt="Logo Kabupaten Semarang" width="36" height="36">
         <div style="line-height:1.1">
@@ -223,12 +224,13 @@
         <form action="{{ route('logout') }}" method="POST">
             @csrf
             <button type="submit"
-                class="btn btn-outline-danger w-100 border-0 d-flex align-items-center gap-2 px-3 py-2 bg-light"
-                style="font-size:.9rem">
+                    class="btn btn-outline-danger w-100 border-0 d-flex align-items-center gap-2 px-3 py-2 bg-light"
+                    style="font-size:.9rem">
                 <i class="bi bi-box-arrow-left"></i> Keluar Aplikasi
             </button>
         </form>
     </div>
+
 </nav>
 
 {{-- Main Content --}}
@@ -260,8 +262,8 @@
         }
 
         // Expose globally so inline onclick attrs in child views still work
-        window.openSidebar  = openSidebar;
-        window.closeSidebar = closeSidebar;
+        window.openSidebar   = openSidebar;
+        window.closeSidebar  = closeSidebar;
         window.toggleSidebar = () => sidebar.classList.contains('show') ? closeSidebar() : openSidebar();
 
         // Bind all toggle triggers
