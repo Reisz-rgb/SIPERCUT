@@ -162,9 +162,11 @@ class CutiController extends Controller
 
     private function syncAnnualLeaveBalance(LeaveRequest $leaveRequest): void
     {
-        if ($leaveRequest->jenis_cuti === LeaveRequest::JENIS_TAHUNAN) {
-            $year = Carbon::parse($leaveRequest->start_date)->year;
-            LeaveBalance::recalculateAnnualBalances((int) $leaveRequest->user_id, $year);
+        if (! $leaveRequest->isAnnualLeave()) {
+            return;
         }
+
+        $year = $leaveRequest->start_date->year;
+        LeaveBalance::recalculateAnnualBalances((int) $leaveRequest->user_id, $year);
     }
 }

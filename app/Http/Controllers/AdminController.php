@@ -270,14 +270,12 @@ class AdminController extends Controller
      */
     private function syncAnnualLeaveBalance(LeaveRequest $pengajuan): void
     {
-        // Trim dan case-insensitive agar tidak gagal karena spasi/huruf
-        $jenis = trim($pengajuan->jenis_cuti);
-        $year  = Carbon::parse($pengajuan->start_date)->year;
-
-        // Selalu recalculate untuk semua jenis cuti yang mempengaruhi kuota tahunan
-        if (in_array($jenis, ['Cuti Tahunan', 'Cuti Besar'], true)) {
-            LeaveBalance::recalculateAnnualBalances((int) $pengajuan->user_id, $year);
+        if (! $pengajuan->isAnnualLeave()) {
+            return;
         }
+
+        $year = $pengajuan->start_date->year; // sudah di-cast ke date, tidak perlu Carbon::parse
+        LeaveBalance::recalculateAnnualBalances((int) $pengajuan->user_id, $year);
     }
 
     /**
