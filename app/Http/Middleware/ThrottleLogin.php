@@ -12,10 +12,19 @@ class ThrottleLogin
 
     public function handle(Request $request, Closure $next)
     {
-        $key = 'login.' . sha1($request->input('nip', '') . '|' . $request->ip());
+        $nip = strtolower(trim($request->input('nip', '')));
 
-        if ($this->limiter->tooManyAttempts($key, 5)) {
-            $seconds = $this->limiter->availableIn($key);
+        $ipKey      = 'login.ip.' . sha1($request->ip());
+        $accountKey = 'login.account.' . sha1($nip);
+
+        if (
+            $this->limiter->tooManyAttempts($ipKey, 20) ||
+            $this->limiter->tooManyAttempts($accountKey, 5)
+        ) {
+            $seconds = max(
+                $this->limiter->availableIn($ipKey),
+                $this->limiter->availableIn($accountKey)
+            );
 
             return back()
                 ->withErrors([
@@ -24,14 +33,6 @@ class ThrottleLogin
                 ->withInput($request->only('nip'));
         }
 
-        $response = $next($request);
-
-        // Hanya increment jika credentials memang salah
-        if (session('login_failed')) {
-            $this->limiter->hit($key, 60);
-            session()->forget('login_failed');
-        }
-
-        return $response;
+        return $next($request);
     }
 }

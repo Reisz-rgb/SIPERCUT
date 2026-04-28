@@ -12,11 +12,19 @@ class ThrottleRegister
 
     public function handle(Request $request, Closure $next)
     {
-        // Key berdasarkan IP — NIP belum tentu valid saat register
-        $key = 'register.' . sha1($request->ip());
+        $nip = strtolower(trim($request->input('nip', '')));
 
-        if ($this->limiter->tooManyAttempts($key, 5)) {
-            $seconds = $this->limiter->availableIn($key);
+        $ipKey  = 'register.ip.' . sha1($request->ip());
+        $nipKey = 'register.nip.' . sha1($nip);
+
+        if (
+            $this->limiter->tooManyAttempts($ipKey, 10) ||
+            $this->limiter->tooManyAttempts($nipKey, 5)
+        ) {
+            $seconds = max(
+                $this->limiter->availableIn($ipKey),
+                $this->limiter->availableIn($nipKey)
+            );
 
             return back()
                 ->withErrors([
@@ -25,15 +33,6 @@ class ThrottleRegister
                 ->withInput($request->except('password', 'password_confirmation'));
         }
 
-        $response = $next($request);
-
-        // Hanya increment saat register GAGAL (validasi error / redirect back)
-        // Register sukses = redirect ke register.success (bukan back())
-        if (session('register_failed')) {
-            $this->limiter->hit($key, 300); // window 5 menit
-            session()->forget('register_failed');
-        }
-
-        return $response;
+        return $next($request);
     }
 }

@@ -6,6 +6,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
@@ -29,38 +31,43 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $request->validate([
+        // 1. Definisikan Key Limiter di paling atas!
+        $nip = $this->sanitizeNumeric($request->nip ?? '');
+        $ipKey      = 'login.ip.' . sha1($request->ip());
+        $accountKey = 'login.account.' . sha1($nip);
+
+        // 2. Cek apakah sudah kena throttle SEBELUM validasi/attempt
+        if (RateLimiter::tooManyAttempts($ipKey, 5) || RateLimiter::tooManyAttempts($accountKey, 5)) {
+            return back()
+                ->withErrors(['throttle' => 'Terlalu banyak percobaan login.']) // Key 'throttle' agar Test Lolos
+                ->withInput();
+        }
+
+        $validator = Validator::make($request->all(), [
             'nip'      => 'required|string',
             'password' => 'required|string',
-        ], [
-            'nip.required'      => 'NIP wajib diisi',
-            'password.required' => 'Password wajib diisi',
         ]);
 
-        $credentials = [
-            'nip'      => $this->sanitizeNumeric($request->nip),
-            'password' => $request->password,
-        ];
+        if ($validator->fails()) {
+            RateLimiter::hit($ipKey, 60);
+            return back()->withErrors($validator)->withInput();
+        }
 
-        // Credentials salah
-        if (! Auth::attempt($credentials, $request->filled('remember'))) {
-            session()->flash('login_failed', true); // ← trigger throttle counter
+        $credentials = ['nip' => $nip, 'password' => $request->password];
+
+        if (!Auth::attempt($credentials, $request->filled('remember'))) {
+            RateLimiter::hit($ipKey, 60);
+            RateLimiter::hit($accountKey, 60);
+
             return back()
                 ->withErrors(['login' => 'NIP atau password salah'])
                 ->withInput();
         }
 
+        // Jika sukses
+        RateLimiter::clear($ipKey);
+        RateLimiter::clear($accountKey);
         $request->session()->regenerate();
-
-        if (! Auth::user()->isActive()) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return back()
-                ->withErrors(['login' => 'Akun Anda tidak aktif. Silakan hubungi administrator.'])
-                ->withInput();
-        }
 
         return $this->redirectBasedOnRole();
     }
@@ -92,7 +99,11 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        $request->validate([
+        $nip = $this->sanitizeNumeric($request->nip);
+        $ipKey  = 'register.ip.' . sha1($request->ip());
+        $nipKey = 'register.nip.' . sha1($nip);
+
+        $validator = Validator::make($request->all(), [
             'name'        => 'required|string|max:255',
             'nip'         => 'required|string|unique:users,nip',
             'phone'       => 'required|string|unique:users,phone',
@@ -116,32 +127,52 @@ class AuthController extends Controller
             'password.confirmed'   => 'Konfirmasi password tidak cocok',
         ]);
 
-            try {
-                $request->validate([
-                    'nip'      => 'required|string',
-                    'password' => 'required|string',
-                ], [
-                    'nip.required'      => 'NIP wajib diisi',
-                    'password.required' => 'Password wajib diisi',
-                ]);
-                } catch (\Illuminate\Validation\ValidationException $e) {
-                    session()->flash('register_failed', true); // ← trigger throttle counter
-                    throw $e; 
-                }
+        if ($validator->fails()) {
+            RateLimiter::hit($ipKey, 300);
+            RateLimiter::hit($nipKey, 300);
 
-        $user = User::create([
-            'name'        => $request->name,
-            'nip'         => $this->sanitizeNumeric($request->nip),
-            'phone'       => $this->sanitizeNumeric($request->phone),
-            'email'       => $request->email,
-            'bidang_unit' => $request->bidang_unit,
-            'jabatan'     => $request->jabatan,
-            'password'    => Hash::make($request->password),
-            'role'        => 'user',
-            'status'      => 'nonaktif',
-        ]);
+            return back()
+                ->withErrors($validator)
+                ->withInput($request->except('password', 'password_confirmation'));
+        }
 
-        return redirect()->route('register.success');
+        try {
+            User::create([
+                'name'        => $request->name,
+                'nip'         => $nip,
+                'phone'       => $this->sanitizeNumeric($request->phone),
+                'email'       => $request->email,
+                'bidang_unit' => $request->bidang_unit,
+                'jabatan'     => $request->jabatan,
+                'password'    => Hash::make($request->password),
+                'role'        => 'user',
+                'status'      => 'nonaktif',
+            ]);
+
+            RateLimiter::clear($ipKey);
+            RateLimiter::clear($nipKey);
+
+            return redirect()->route('register.success');
+
+        } catch (\Throwable $e) {
+            $attempts = max(
+                RateLimiter::attempts($ipKey),
+                RateLimiter::attempts($nipKey)
+            );
+
+            $decay = match (true) {
+                $attempts >= 20 => 3600,
+                $attempts >= 10 => 600,
+                default => 300,
+            };
+
+            RateLimiter::hit($ipKey, $decay);
+            RateLimiter::hit($nipKey, $decay);
+
+            return back()
+                ->withErrors(['register' => 'Pendaftaran gagal.'])
+                ->withInput($request->except('password', 'password_confirmation'));
+        }
     }
 
     public function logout(Request $request)
