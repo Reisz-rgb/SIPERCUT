@@ -150,13 +150,16 @@ class AdminController extends Controller
             'rejection_reason' => 'nullable|string',
         ]);
 
-        $pengajuan = LeaveRequest::findOrFail($id);
-        $pengajuan->update([
-            'status'           => $validated['status'],
-            'rejection_reason' => $validated['rejection_reason'] ?? null,
-        ]);
+        DB::transaction(function () use ($id, $validated) {
+            $pengajuan = LeaveRequest::lockForUpdate()->findOrFail($id);
+            
+            $pengajuan->update([
+                'status'           => $validated['status'],
+                'rejection_reason' => $validated['rejection_reason'] ?? null,
+            ]);
 
-        $this->syncAnnualLeaveBalance($pengajuan);
+            $this->syncAnnualLeaveBalance($pengajuan);
+        });
 
         return back()->with('success', 'Keputusan berhasil disimpan!');
     }
@@ -353,7 +356,7 @@ class AdminController extends Controller
     /**
      * Response dashboard kosong saat tabel belum ada.
      */
-    private function dashboardEmptyResponse(int $totalPegawai, $listPegawai)
+    private function dashboardEmptyResponse(int $totalPegawai, $listPegawai, $pendingActivation)
     {
         return view('admin.dashboard_admin', [
             'totalPengajuan'   => 0,

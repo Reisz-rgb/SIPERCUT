@@ -42,16 +42,11 @@ class LeaveBalance extends Model
         $bonusN1 = ($n1->used == 0) ? 6 : 0;
 
         return [
-            'n2' => ['year' => $currentYear - 2, 'used' => $n2->used, 'bonus' => $bonusN2],
-            'n1' => ['year' => $currentYear - 1, 'used' => $n1->used, 'bonus' => $bonusN1],
-            'n'  => [
-                'year' => $currentYear, 
-                'quota' => $n->quota, 
-                'used' => $n->used, 
-                'remaining' => $n->remaining
-            ],
-            'total_available' => $n->remaining + $bonusN1 + $bonusN2,
-        ];
+                'n2' => ['year' => $currentYear - 2, 'used' => $n2->used, 'bonus' => ($n2->used == 0) ? 6 : 0],
+                'n1' => ['year' => $currentYear - 1, 'used' => $n1->used, 'bonus' => ($n1->used == 0) ? 6 : 0],
+                'n'  => ['year' => $currentYear, 'quota' => $n->quota, 'used' => $n->used, 'remaining' => $n->remaining],
+                'total_available' => $n->remaining + (($n1->used == 0) ? 6 : 0) + (($n2->used == 0) ? 6 : 0),
+            ];
     }
 
     public static function recalculateAnnualBalances(int $userId, int $year): array
@@ -66,11 +61,12 @@ class LeaveBalance extends Model
             $n->remaining = $n->quota;
 
             // 2. Refresh data pemakaian tahun N-1 dan N-2 dari database
-            // Penting: used di sini menentukan apakah bonus tersedia atau tidak
-            $n2->used = self::sumApprovedDuration($userId, $year - 2);
-            $n1->used = self::sumApprovedDuration($userId, $year - 1);
-            
+            $n2->used      = self::sumApprovedDuration($userId, $year - 2);
+            $n2->remaining = max(0, $n2->quota - $n2->used); 
             $n2->save();
+
+            $n1->used      = self::sumApprovedDuration($userId, $year - 1);
+            $n1->remaining = max(0, $n1->quota - $n1->used); 
             $n1->save();
 
             // 3. Hitung ketersediaan bonus berdasarkan used
