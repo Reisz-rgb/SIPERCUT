@@ -274,7 +274,9 @@ class AdminController extends Controller
             return;
         }
 
-        $year = $pengajuan->start_date->year; // sudah di-cast ke date, tidak perlu Carbon::parse
+        // Pastikan hanya admin/authorized role yang sampai ke sini
+        // Gate check ada di middleware route, bukan di sini
+        $year = $pengajuan->start_date->year;
         LeaveBalance::recalculateAnnualBalances((int) $pengajuan->user_id, $year);
     }
 

@@ -160,13 +160,15 @@ class CutiController extends Controller
         return preg_replace('/[^0-9]/', '', $phone);
     }
 
-    private function syncAnnualLeaveBalance(LeaveRequest $leaveRequest): void
+    private function syncAnnualLeaveBalance(LeaveRequest $pengajuan): void
     {
-        if (! $leaveRequest->isAnnualLeave()) {
+        if (! $pengajuan->isAnnualLeave()) {
             return;
         }
 
-        $year = $leaveRequest->start_date->year;
-        LeaveBalance::recalculateAnnualBalances((int) $leaveRequest->user_id, $year);
+        // Pastikan hanya admin/authorized role yang sampai ke sini
+        // Gate check ada di middleware route, bukan di sini
+        $year = $pengajuan->start_date->year;
+        LeaveBalance::recalculateAnnualBalances((int) $pengajuan->user_id, $year);
     }
 }

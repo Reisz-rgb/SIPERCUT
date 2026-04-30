@@ -416,7 +416,8 @@ class UserController extends Controller
         try {
             if (method_exists(LeaveBalance::class, 'recalculateAnnualBalances') && !empty($user->id) && !empty($leave->start_date)) {
                 $leaveYear = Carbon::parse($leave->start_date)->year;
-                $balance = LeaveBalance::recalculateAnnualBalances((int) $user->id, $leaveYear);
+                $balance = LeaveBalance::calculateTotalAvailable((int) $user->id, $leaveYear);
+
 
                 $sisaN2Raw = (int) ($balance['n2']['remaining'] ?? 0);
                 $sisaN1Raw = (int) ($balance['n1']['remaining'] ?? 0);
