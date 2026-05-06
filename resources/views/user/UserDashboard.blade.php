@@ -7,9 +7,10 @@
 @section('content')
     @php
         $authUser = $user ?? auth()->user();
-        $recent = $recentLeaves ?? $latestLeaves ?? [];
+        $recent   = $recentLeaves ?? $latestLeaves ?? [];
     @endphp
 
+    {{-- Email warning banner --}}
     @if(empty($authUser->email))
         <div class="flex items-start gap-4 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 mb-2">
             <div class="flex-shrink-0 w-9 h-9 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-600">
@@ -22,12 +23,13 @@
                 </p>
             </div>
             <a href="{{ route('user.profil.edit') }}"
-            class="flex-shrink-0 text-xs font-extrabold text-amber-700 bg-amber-100 hover:bg-amber-200 border border-amber-300 px-3 py-2 rounded-xl transition whitespace-nowrap">
+               class="flex-shrink-0 text-xs font-extrabold text-amber-700 bg-amber-100 hover:bg-amber-200 border border-amber-300 px-3 py-2 rounded-xl transition whitespace-nowrap">
                 Isi Email
             </a>
         </div>
     @endif
 
+    {{-- Welcome card --}}
     <section class="bg-white border-0 rounded-[2.5rem] p-8 md:p-10 shadow-soft flex flex-col justify-center">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div class="flex-1">
@@ -36,12 +38,17 @@
                     <span class="text-[10px] font-extrabold tracking-widest uppercase">{{ $authUser->status ?? 'AKTIF' }}</span>
                 </div>
 
-                <h3 class="text-2xl md:text-3xl font-extrabold text-slate-800 leading-tight">Halo, {{ explode(' ', $authUser->name ?? 'User')[0] }}! 👋</h3>
-                <p class="text-slate-500 text-base font-medium mt-2 leading-relaxed md:w-3/4">Pantau sisa jatah cuti dan status pengajuan Anda.</p>
+                <h3 class="text-2xl md:text-3xl font-extrabold text-slate-800 leading-tight">
+                    Halo, {{ explode(' ', $authUser->name ?? 'User')[0] }}! 👋
+                </h3>
+                <p class="text-slate-500 text-base font-medium mt-2 leading-relaxed md:w-3/4">
+                    Pantau sisa jatah cuti dan status pengajuan Anda.
+                </p>
             </div>
 
             <div class="flex-shrink-0">
-                <a href="{{ route('user.cuti.create') }}" class="btn-primary text-white px-8 py-4 rounded-2xl font-bold shadow-lg shadow-red-900/20 text-sm md:text-base inline-flex items-center justify-center w-full md:w-auto transition-all hover:scale-[1.02] active:scale-[0.98]">
+                <a href="{{ route('user.cuti.create') }}"
+                   class="btn-primary text-white px-8 py-4 rounded-2xl font-bold shadow-lg shadow-red-900/20 text-sm md:text-base inline-flex items-center justify-center w-full md:w-auto transition-all hover:scale-[1.02] active:scale-[0.98]">
                     <i class="bi bi-plus-circle-fill mr-3 text-lg"></i>
                     Ajukan Cuti Baru
                 </a>
@@ -49,9 +56,13 @@
         </div>
     </section>
 
-    {{-- Stats + Recent (layout mengikuti dashboard benchmark) --}}
+    {{-- Stats + Recent --}}
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mt-6">
+
+        {{-- Stat cards --}}
         <div class="lg:col-span-5 space-y-4">
+
+            {{-- Jatah Tahunan --}}
             <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:-translate-y-1 transition-transform flex items-center gap-5">
                 <div class="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center flex-shrink-0 border border-blue-100 text-blue-500">
                     <i class="bi bi-files text-2xl"></i>
@@ -63,9 +74,9 @@
                         <p class="text-[11px] text-slate-400 font-bold uppercase">Hari</p>
                     </div>
                     @php
-                        $quotaMax = (int)($annualQuota ?? ($totalQuota ?? 0));
+                        $quotaMax     = (int)($annualQuota ?? ($totalQuota ?? 0));
                         $remainAnnual = (int)($totalQuota ?? 0);
-                        $pctAnnual = ($quotaMax > 0) ? min(100, max(0, ($remainAnnual / $quotaMax) * 100)) : 0;
+                        $pctAnnual    = ($quotaMax > 0) ? min(100, max(0, ($remainAnnual / $quotaMax) * 100)) : 0;
                     @endphp
                     <div class="mt-3 bg-slate-100 rounded-full h-1.5 overflow-hidden">
                         <div class="bg-blue-500 h-full" style="width: {{ $pctAnnual }}%"></div>
@@ -73,6 +84,7 @@
                 </div>
             </div>
 
+            {{-- Telah Diambil --}}
             <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm hover:-translate-y-1 transition-transform flex items-center gap-5">
                 <div class="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center flex-shrink-0 border border-orange-100 text-orange-500">
                     <i class="bi bi-hourglass-split text-2xl"></i>
@@ -83,17 +95,18 @@
                         <h3 class="text-3xl font-black text-orange-600 leading-none">{{ $usedLeave ?? 0 }}</h3>
                         <p class="text-[11px] text-slate-400 font-bold uppercase">Hari</p>
                     </div>
+                    @php
+                        $quota = max((int)($totalQuota ?? 0), 1);
+                        $used  = (int)($usedLeave ?? 0);
+                        $pct   = min(100, max(0, ($used / $quota) * 100));
+                    @endphp
                     <div class="mt-3 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                        @php
-                            $quota = max((int)($totalQuota ?? 0), 1);
-                            $used = (int)($usedLeave ?? 0);
-                            $pct = min(100, max(0, ($used / $quota) * 100));
-                        @endphp
                         <div class="bg-orange-500 h-full" style="width: {{ $pct }}%"></div>
                     </div>
                 </div>
             </div>
 
+            {{-- Sisa Cuti --}}
             <div class="bg-white rounded-3xl p-6 border border-emerald-100 shadow-sm hover:-translate-y-1 transition-transform flex items-center gap-5 bg-gradient-to-r from-white to-emerald-50/30">
                 <div class="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-content-center flex-shrink-0 border border-emerald-100 text-emerald-600 flex items-center justify-center">
                     <i class="bi bi-check-lg text-2xl"></i>
@@ -105,26 +118,31 @@
                         <p class="text-[11px] text-slate-400 font-bold uppercase">Hari</p>
                     </div>
                     @php
-                        $maxAvail = (int)($maxAvailable ?? ($remainingLeave ?? 0));
+                        $maxAvail   = (int)($maxAvailable ?? ($remainingLeave ?? 0));
                         $remainAvail = (int)($remainingLeave ?? 0);
-                        $pctAvail = ($maxAvail > 0) ? min(100, max(0, ($remainAvail / $maxAvail) * 100)) : 0;
+                        $pctAvail   = ($maxAvail > 0) ? min(100, max(0, ($remainAvail / $maxAvail) * 100)) : 0;
                     @endphp
                     <div class="mt-3 bg-slate-100 rounded-full h-1.5 overflow-hidden">
                         <div class="bg-emerald-500 h-full" style="width: {{ $pctAvail }}%"></div>
                     </div>
-
                 </div>
             </div>
+
         </div>
 
+        {{-- Recent submissions --}}
         <div class="lg:col-span-7">
             <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+
                 <div class="p-6 border-b border-slate-50 flex justify-between items-center">
                     <h4 class="text-sm font-bold text-slate-800 flex items-center gap-2">
                         <i class="bi bi-clock-history text-[var(--maroon)]"></i>
                         Pengajuan Terbaru
                     </h4>
-                    <a href="{{ route('user.riwayat') }}" class="text-[11px] font-bold text-[var(--maroon)] hover:underline uppercase tracking-tighter">Lihat Semua</a>
+                    <a href="{{ route('user.riwayat') }}"
+                       class="text-[11px] font-bold text-[var(--maroon)] hover:underline uppercase tracking-tighter">
+                        Lihat Semua
+                    </a>
                 </div>
 
                 <div class="p-5 space-y-4">
@@ -132,13 +150,13 @@
                         @php
                             $statusColor = [
                                 'approved' => 'emerald',
-                                'pending' => 'orange',
+                                'pending'  => 'orange',
                                 'rejected' => 'red',
                             ][$leave->status] ?? 'slate';
 
                             $statusIcon = [
                                 'approved' => 'bi-check-circle-fill',
-                                'pending' => 'bi-hourglass-split',
+                                'pending'  => 'bi-hourglass-split',
                                 'rejected' => 'bi-x-circle-fill',
                             ][$leave->status] ?? 'bi-info-circle';
                         @endphp
@@ -150,13 +168,16 @@
                             <div class="flex-1 min-w-0">
                                 <div class="flex justify-between items-start gap-3">
                                     <h5 class="font-bold text-slate-800 text-sm truncate">{{ $leave->jenis_cuti }}</h5>
-                                    <span class="text-[10px] font-bold bg-{{ $statusColor }}-50 text-{{ $statusColor }}-600 px-2.5 py-1 rounded-lg capitalize border border-{{ $statusColor }}-100">{{ $leave->status }}</span>
+                                    <span class="text-[10px] font-bold bg-{{ $statusColor }}-50 text-{{ $statusColor }}-600 px-2.5 py-1 rounded-lg capitalize border border-{{ $statusColor }}-100">
+                                        {{ $leave->status }}
+                                    </span>
                                 </div>
                                 <p class="text-xs text-slate-500 font-medium mt-1">
                                     {{ $leave->start_date->format('d M Y') }} • <span class="text-slate-800">{{ $leave->duration }} Hari</span>
                                 </p>
                             </div>
                         </div>
+
                     @empty
                         <div class="text-center py-12">
                             <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -166,11 +187,16 @@
                         </div>
                     @endforelse
                 </div>
+
             </div>
         </div>
+
     </section>
 
+    {{-- Footer --}}
     <div class="text-center pt-8 pb-4">
-        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">© {{ now()->year }} Pemerintah Kabupaten Semarang • Disdikbudpora</p>
+        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+            © {{ now()->year }} Pemerintah Kabupaten Semarang • Disdikbudpora
+        </p>
     </div>
 @endsection

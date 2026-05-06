@@ -8,6 +8,8 @@
     @php($authUser = $user ?? auth()->user())
 
     <div class="max-w-5xl mx-auto space-y-6">
+
+        {{-- Validation errors --}}
         @if ($errors->any())
             <div class="rounded-2xl border border-red-200 bg-red-50 px-6 py-5">
                 <div class="flex items-start gap-3">
@@ -45,35 +47,64 @@
                 </div>
 
                 <div class="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    {{-- Nama Lengkap --}}
                     <div>
                         <label class="block text-xs font-extrabold text-slate-600 mb-2">Nama Lengkap</label>
-                        <input type="text" value="{{ $authUser->name }}" readonly class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold" />
+                        <input type="text"
+                               value="{{ $authUser->name }}"
+                               readonly
+                               class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold" />
                     </div>
+
+                    {{-- NIP --}}
                     <div>
                         <label class="block text-xs font-extrabold text-slate-600 mb-2">NIP</label>
-                        <input type="text" value="{{ $authUser->nip }}" readonly class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold" />
+                        <input type="text"
+                               value="{{ $authUser->nip }}"
+                               readonly
+                               class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold" />
                     </div>
+
+                    {{-- Jabatan --}}
                     <div>
                         <label class="block text-xs font-extrabold text-slate-600 mb-2">Jabatan</label>
-                        <input type="text" value="{{ $authUser->jabatan ?? '-' }}" readonly class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold" />
+                        <input type="text"
+                               value="{{ $authUser->jabatan ?? '-' }}"
+                               readonly
+                               class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold" />
                     </div>
+
+                    {{-- Masa Kerja --}}
                     <div>
                         <label class="block text-xs font-extrabold text-slate-600 mb-2">Masa Kerja</label>
                         <div class="grid grid-cols-2 gap-3">
                             <div class="flex items-center gap-2">
-                                <input type="text" value="{{ floor($workYears ?? 0) }}" readonly class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold" />
+                                <input type="text"
+                                       value="{{ floor($workYears ?? 0) }}"
+                                       readonly
+                                       class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold" />
                                 <span class="text-xs text-slate-500 font-bold">Tahun</span>
                             </div>
                             <div class="flex items-center gap-2">
-                                <input type="text" value="{{ floor($workMonths ?? 0) }}" readonly class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold" />
+                                <input type="text"
+                                       value="{{ floor($workMonths ?? 0) }}"
+                                       readonly
+                                       class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold" />
                                 <span class="text-xs text-slate-500 font-bold">Bulan</span>
                             </div>
                         </div>
                     </div>
+
+                    {{-- Unit Kerja --}}
                     <div class="md:col-span-2">
                         <label class="block text-xs font-extrabold text-slate-600 mb-2">Unit Kerja</label>
-                        <input type="text" value="{{ $authUser->bidang_unit ?? 'DISDIKBUDPORA KABUPATEN SEMARANG' }}" readonly class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold" />
+                        <input type="text"
+                               value="{{ $authUser->bidang_unit ?? 'DISDIKBUDPORA KABUPATEN SEMARANG' }}"
+                               readonly
+                               class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold" />
                     </div>
+
                 </div>
             </section>
 
@@ -93,6 +124,8 @@
                 </div>
 
                 <div class="p-6 md:p-8 space-y-4">
+
+                    {{-- Supervisor select --}}
                     <div>
                         <label class="block text-xs font-extrabold text-slate-600 mb-2">
                             Nama Atasan <span class="text-red-600">*</span>
@@ -100,14 +133,12 @@
 
                         {{-- Custom select wrapper --}}
                         <div class="relative">
-                            <select
-                                name="supervisor_id"
-                                id="supervisor_select"
-                                required
-                                class="w-full appearance-none px-4 py-3 pr-10 rounded-2xl border
-                                       {{ $errors->has('supervisor_id') ? 'border-red-400 bg-red-50' : 'border-slate-200 bg-white' }}
-                                       text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)] cursor-pointer"
-                            >
+                            <select name="supervisor_id"
+                                    id="supervisor_select"
+                                    required
+                                    class="w-full appearance-none px-4 py-3 pr-10 rounded-2xl border
+                                           {{ $errors->has('supervisor_id') ? 'border-red-400 bg-red-50' : 'border-slate-200 bg-white' }}
+                                           text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)] cursor-pointer">
                                 <option value="" disabled {{ old('supervisor_id') ? '' : 'selected' }}>
                                     — Pilih atasan langsung —
                                 </option>
@@ -115,13 +146,11 @@
                                 @foreach ($supervisors as $unitKerja => $group)
                                     <optgroup label="{{ $unitKerja }}">
                                         @foreach ($group as $supervisor)
-                                            <option
-                                                value="{{ $supervisor->id }}"
-                                                data-jabatan="{{ $supervisor->jabatan }}"
-                                                data-unit="{{ $supervisor->unit_kerja }}"
-                                                data-nip="{{ $supervisor->nip }}"
-                                                {{ old('supervisor_id') == $supervisor->id ? 'selected' : '' }}
-                                            >
+                                            <option value="{{ $supervisor->id }}"
+                                                    data-jabatan="{{ $supervisor->jabatan }}"
+                                                    data-unit="{{ $supervisor->unit_kerja }}"
+                                                    data-nip="{{ $supervisor->nip }}"
+                                                    {{ old('supervisor_id') == $supervisor->id ? 'selected' : '' }}>
                                                 {{ $supervisor->nama }}
                                             </option>
                                         @endforeach
@@ -141,7 +170,8 @@
                     </div>
 
                     {{-- Info card: muncul setelah memilih atasan --}}
-                    <div id="supervisor_info" class="hidden rounded-2xl border border-slate-100 bg-slate-50/60 p-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div id="supervisor_info"
+                         class="hidden rounded-2xl border border-slate-100 bg-slate-50/60 p-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                             <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">NIP</p>
                             <p id="info_nip" class="text-sm font-extrabold text-slate-700">—</p>
@@ -155,6 +185,7 @@
                             <p id="info_unit" class="text-sm font-extrabold text-slate-700">—</p>
                         </div>
                     </div>
+
                 </div>
             </section>
 
@@ -173,15 +204,19 @@
                 <div class="p-6 md:p-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
                     @php($jenisOld = old('jenis_cuti', 'Cuti Tahunan'))
                     @foreach([
-                        'Cuti Tahunan'        => 'Cuti Tahunan',
-                        'Cuti Besar'          => 'Cuti Besar',
-                        'Cuti Sakit'          => 'Cuti Sakit',
-                        'Cuti Melahirkan'     => 'Cuti Melahirkan',
-                        'Cuti Alasan Penting' => 'Cuti Karena Alasan Penting',
-                        'Cuti Luar Tanggungan'=> 'Cuti di Luar Tanggungan Negara',
+                        'Cuti Tahunan'         => 'Cuti Tahunan',
+                        'Cuti Besar'           => 'Cuti Besar',
+                        'Cuti Sakit'           => 'Cuti Sakit',
+                        'Cuti Melahirkan'      => 'Cuti Melahirkan',
+                        'Cuti Alasan Penting'  => 'Cuti Karena Alasan Penting',
+                        'Cuti Luar Tanggungan' => 'Cuti di Luar Tanggungan Negara',
                     ] as $value => $label)
                         <label class="flex items-center gap-3 p-4 rounded-2xl border border-slate-200 hover:bg-slate-50 cursor-pointer transition">
-                            <input type="radio" name="jenis_cuti" value="{{ $value }}" class="h-4 w-4 text-[var(--maroon)]" {{ $jenisOld === $value ? 'checked' : '' }}>
+                            <input type="radio"
+                                   name="jenis_cuti"
+                                   value="{{ $value }}"
+                                   class="h-4 w-4 text-[var(--maroon)]"
+                                   {{ $jenisOld === $value ? 'checked' : '' }}>
                             <div class="min-w-0">
                                 <div class="text-sm font-extrabold text-slate-800">{{ $label }}</div>
                                 <div class="text-xs text-slate-500 font-medium">{{ $value }}</div>
@@ -204,10 +239,14 @@
                 </div>
 
                 <div class="p-6 md:p-8">
-                    <label class="block text-xs font-extrabold text-slate-600 mb-2">Uraian Alasan <span class="text-red-600">*</span></label>
-                    <textarea name="alasan" minlength="20" required
-                              class="w-full min-h-[140px] px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-medium focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]"
-                              placeholder="Jelaskan alasan cuti secara detail...">{{ old('alasan') }}</textarea>
+                    <label class="block text-xs font-extrabold text-slate-600 mb-2">
+                        Uraian Alasan <span class="text-red-600">*</span>
+                    </label>
+                    <textarea name="alasan"
+                              minlength="20"
+                              required
+                              placeholder="Jelaskan alasan cuti secara detail..."
+                              class="w-full min-h-[140px] px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-medium focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]">{{ old('alasan') }}</textarea>
                     <p class="text-[11px] text-slate-400 mt-2 font-semibold">Berikan alasan yang jelas, minimal 20 karakter.</p>
                 </div>
             </section>
@@ -225,22 +264,45 @@
                 </div>
 
                 <div class="p-6 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-5">
+
+                    {{-- Selama (Hari) --}}
                     <div>
-                        <label class="block text-xs font-extrabold text-slate-600 mb-2">Selama (Hari) <span class="text-red-600">*</span></label>
-                        <input type="number" name="lama_hari" min="1" required value="{{ old('lama_hari') }}"
-                               class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]"
-                               placeholder="0">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-extrabold text-slate-600 mb-2">Mulai Tanggal <span class="text-red-600">*</span></label>
-                        <input type="date" name="tanggal_mulai" required value="{{ old('tanggal_mulai') }}"
+                        <label class="block text-xs font-extrabold text-slate-600 mb-2">
+                            Selama (Hari) <span class="text-red-600">*</span>
+                        </label>
+                        <input type="number"
+                               name="lama_hari"
+                               min="1"
+                               required
+                               value="{{ old('lama_hari') }}"
+                               placeholder="0"
                                class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]">
                     </div>
+
+                    {{-- Mulai Tanggal --}}
                     <div>
-                        <label class="block text-xs font-extrabold text-slate-600 mb-2">s/d Tanggal <span class="text-red-600">*</span></label>
-                        <input type="date" name="tanggal_selesai" required value="{{ old('tanggal_selesai') }}"
+                        <label class="block text-xs font-extrabold text-slate-600 mb-2">
+                            Mulai Tanggal <span class="text-red-600">*</span>
+                        </label>
+                        <input type="date"
+                               name="tanggal_mulai"
+                               required
+                               value="{{ old('tanggal_mulai') }}"
                                class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]">
                     </div>
+
+                    {{-- s/d Tanggal --}}
+                    <div>
+                        <label class="block text-xs font-extrabold text-slate-600 mb-2">
+                            s/d Tanggal <span class="text-red-600">*</span>
+                        </label>
+                        <input type="date"
+                               name="tanggal_selesai"
+                               required
+                               value="{{ old('tanggal_selesai') }}"
+                               class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]">
+                    </div>
+
                 </div>
             </section>
 
@@ -267,24 +329,70 @@
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             <tr>
-                                <td class="py-4 pr-4 font-extrabold text-slate-700">N-2 ({{ $leaveBalance['n2']['year'] ?? '-' }})</td>
-                                <td class="py-4 pr-4"><input type="text" readonly value="{{ $leaveBalance['n2']['remaining'] ?? 0 }}" class="w-28 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold"></td>
-                                <td class="py-4"><input type="text" readonly value="Bonus: {{ $leaveBalance['n2']['bonus'] ?? 0 }} hari (setengah dari sisa)" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-medium"></td>
+                                <td class="py-4 pr-4 font-extrabold text-slate-700">
+                                    N-2 ({{ $leaveBalance['n2']['year'] ?? '-' }})
+                                </td>
+                                <td class="py-4 pr-4">
+                                    <input type="text"
+                                           readonly
+                                           value="{{ $leaveBalance['n2']['remaining'] ?? 0 }}"
+                                           class="w-28 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold">
+                                </td>
+                                <td class="py-4">
+                                    <input type="text"
+                                           readonly
+                                           value="Bonus: {{ $leaveBalance['n2']['bonus'] ?? 0 }} hari (setengah dari sisa)"
+                                           class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-medium">
+                                </td>
                             </tr>
                             <tr>
-                                <td class="py-4 pr-4 font-extrabold text-slate-700">N-1 ({{ $leaveBalance['n1']['year'] ?? '-' }})</td>
-                                <td class="py-4 pr-4"><input type="text" readonly value="{{ $leaveBalance['n1']['remaining'] ?? 0 }}" class="w-28 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold"></td>
-                                <td class="py-4"><input type="text" readonly value="Bonus: {{ $leaveBalance['n1']['bonus'] ?? 0 }} hari (setengah dari sisa)" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-medium"></td>
+                                <td class="py-4 pr-4 font-extrabold text-slate-700">
+                                    N-1 ({{ $leaveBalance['n1']['year'] ?? '-' }})
+                                </td>
+                                <td class="py-4 pr-4">
+                                    <input type="text"
+                                           readonly
+                                           value="{{ $leaveBalance['n1']['remaining'] ?? 0 }}"
+                                           class="w-28 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold">
+                                </td>
+                                <td class="py-4">
+                                    <input type="text"
+                                           readonly
+                                           value="Bonus: {{ $leaveBalance['n1']['bonus'] ?? 0 }} hari (setengah dari sisa)"
+                                           class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-medium">
+                                </td>
                             </tr>
                             <tr>
-                                <td class="py-4 pr-4 font-extrabold text-slate-700">N ({{ $leaveBalance['n']['year'] ?? '-' }}) - Tahun Berjalan</td>
-                                <td class="py-4 pr-4"><input type="text" readonly value="{{ $leaveBalance['n']['remaining'] ?? 0 }}" class="w-28 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[var(--maroon)] font-extrabold"></td>
-                                <td class="py-4"><input type="text" readonly value="Sisa cuti tahun ini (dari {{ $leaveBalance['n']['quota'] ?? 0 }} hari)" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-medium"></td>
+                                <td class="py-4 pr-4 font-extrabold text-slate-700">
+                                    N ({{ $leaveBalance['n']['year'] ?? '-' }}) - Tahun Berjalan
+                                </td>
+                                <td class="py-4 pr-4">
+                                    <input type="text"
+                                           readonly
+                                           value="{{ $leaveBalance['n']['remaining'] ?? 0 }}"
+                                           class="w-28 px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-[var(--maroon)] font-extrabold">
+                                </td>
+                                <td class="py-4">
+                                    <input type="text"
+                                           readonly
+                                           value="Sisa cuti tahun ini (dari {{ $leaveBalance['n']['quota'] ?? 0 }} hari)"
+                                           class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 text-slate-600 font-medium">
+                                </td>
                             </tr>
                             <tr class="bg-emerald-50/30">
                                 <td class="py-4 pr-4 font-black text-[var(--maroon)]">TOTAL TERSEDIA</td>
-                                <td class="py-4 pr-4"><input type="text" readonly value="{{ $leaveBalance['total_available'] ?? 0 }}" class="w-28 px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-black"></td>
-                                <td class="py-4"><input type="text" readonly value="Total cuti yang dapat diambil saat ini" class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium"></td>
+                                <td class="py-4 pr-4">
+                                    <input type="text"
+                                           readonly
+                                           value="{{ $leaveBalance['total_available'] ?? 0 }}"
+                                           class="w-28 px-3 py-2 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-black">
+                                </td>
+                                <td class="py-4">
+                                    <input type="text"
+                                           readonly
+                                           value="Total cuti yang dapat diambil saat ini"
+                                           class="w-full px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 font-medium">
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -304,26 +412,59 @@
                 </div>
 
                 <div class="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                    {{-- Alamat Lengkap --}}
                     <div class="md:col-span-2">
-                        <label class="block text-xs font-extrabold text-slate-600 mb-2">Alamat Lengkap <span class="text-red-600">*</span></label>
-                        <textarea name="alamat_cuti" required class="w-full min-h-[110px] px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-medium focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]" placeholder="Jalan, RT/RW, Kelurahan, Kecamatan, Kota/Kabupaten...">{{ old('alamat_cuti') }}</textarea>
+                        <label class="block text-xs font-extrabold text-slate-600 mb-2">
+                            Alamat Lengkap <span class="text-red-600">*</span>
+                        </label>
+                        <textarea name="alamat_cuti"
+                                  required
+                                  placeholder="Jalan, RT/RW, Kelurahan, Kecamatan, Kota/Kabupaten..."
+                                  class="w-full min-h-[110px] px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-medium focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]">{{ old('alamat_cuti') }}</textarea>
                     </div>
 
+                    {{-- Nomor Telepon / HP --}}
                     <div>
-                        <label class="block text-xs font-extrabold text-slate-600 mb-2">Nomor Telepon / HP <span class="text-red-600">*</span></label>
-                        <input type="text" name="no_telepon" required value="{{ old('no_telepon') }}" class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]" placeholder="08xxxxxxxxxx">
+                        <label class="block text-xs font-extrabold text-slate-600 mb-2">
+                            Nomor Telepon / HP <span class="text-red-600">*</span>
+                        </label>
+                        <input type="text"
+                               name="no_telepon"
+                               required
+                               value="{{ old('no_telepon') }}"
+                               placeholder="08xxxxxxxxxx"
+                               class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]">
                     </div>
 
                     <div class="grid grid-cols-1 gap-5">
+
+                        {{-- Nomor Telepon Darurat --}}
                         <div>
-                            <label class="block text-xs font-extrabold text-slate-600 mb-2">Nomor Telepon / HP Darurat <span class="text-red-600">*</span></label>
-                            <input type="text" name="no_telepon_darurat" required value="{{ old('no_telepon_darurat') }}" class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]" placeholder="08xxxxxxxxxx">
+                            <label class="block text-xs font-extrabold text-slate-600 mb-2">
+                                Nomor Telepon / HP Darurat <span class="text-red-600">*</span>
+                            </label>
+                            <input type="text"
+                                   name="no_telepon_darurat"
+                                   required
+                                   value="{{ old('no_telepon_darurat') }}"
+                                   placeholder="08xxxxxxxxxx"
+                                   class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]">
                         </div>
 
+                        {{-- Hubungan Darurat --}}
                         <div>
-                            <label class="block text-xs font-extrabold text-slate-600 mb-2">Hubungan dengan yang Bersangkutan <span class="text-red-600">*</span></label>
-                            <input type="text" name="hubungan_darurat" required value="{{ old('hubungan_darurat') }}" class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]" placeholder="Contoh: Istri, Suami, Orang Tua, Saudara">
+                            <label class="block text-xs font-extrabold text-slate-600 mb-2">
+                                Hubungan dengan yang Bersangkutan <span class="text-red-600">*</span>
+                            </label>
+                            <input type="text"
+                                   name="hubungan_darurat"
+                                   required
+                                   value="{{ old('hubungan_darurat') }}"
+                                   placeholder="Contoh: Istri, Suami, Orang Tua, Saudara"
+                                   class="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-white text-slate-800 font-semibold focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]">
                         </div>
+
                     </div>
                 </div>
             </section>
@@ -341,19 +482,30 @@
                 </div>
 
                 <div class="p-6 md:p-8 space-y-5">
+
+                    {{-- Catatan Tambahan --}}
                     <div>
                         <label class="block text-xs font-extrabold text-slate-600 mb-2">Catatan Tambahan</label>
-                        <textarea name="catatan_tambahan" class="w-full min-h-[110px] px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50/30 text-slate-800 font-medium focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]" placeholder="Tambahkan catatan jika ada hal spesifik...">{{ old('catatan_tambahan') }}</textarea>
+                        <textarea name="catatan_tambahan"
+                                  placeholder="Tambahkan catatan jika ada hal spesifik..."
+                                  class="w-full min-h-[110px] px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50/30 text-slate-800 font-medium focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-[var(--maroon)]">{{ old('catatan_tambahan') }}</textarea>
                     </div>
 
+                    {{-- Dokumen Lampiran --}}
                     <div>
                         <label class="block text-xs font-extrabold text-slate-600 mb-2">Dokumen Lampiran</label>
-                        <div id="dropZone" class="relative rounded-2xl border border-dashed border-slate-200 bg-slate-50/40 p-6 flex flex-col items-center justify-center text-center">
-                            <input type="file" name="dokumen_pendukung" id="fileUpload" accept=".pdf,.doc,.docx,.jpg,.png" class="absolute inset-0 opacity-0 cursor-pointer" />
+                        <div id="dropZone"
+                             class="relative rounded-2xl border border-dashed border-slate-200 bg-slate-50/40 p-6 flex flex-col items-center justify-center text-center">
+                            <input type="file"
+                                   name="dokumen_pendukung"
+                                   id="fileUpload"
+                                   accept=".pdf,.doc,.docx,.jpg,.png"
+                                   class="absolute inset-0 opacity-0 cursor-pointer" />
                             @error('dokumen_pendukung')
                                 <p class="text-xs text-red-600 font-semibold mt-2">{{ $message }}</p>
                             @enderror
-                            <div id="uploadIcon" class="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-500">
+                            <div id="uploadIcon"
+                                 class="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-slate-500">
                                 <i class="bi bi-upload text-2xl"></i>
                             </div>
                             <div id="uploadText" class="mt-4 text-sm font-extrabold text-slate-700">Klik atau seret file ke sini</div>
@@ -361,6 +513,7 @@
                         </div>
                     </div>
 
+                    {{-- Tips --}}
                     <div class="rounded-2xl border border-blue-100 bg-blue-50/50 p-5 flex gap-3">
                         <div class="w-10 h-10 rounded-xl bg-white border border-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
                             <i class="bi bi-lightbulb-fill"></i>
@@ -370,16 +523,22 @@
                             <p class="text-sm text-blue-700/80 font-medium mt-1">Pastikan melengkapi dokumen pendukung agar proses verifikasi berjalan lancar.</p>
                         </div>
                     </div>
+
                 </div>
             </section>
 
+            {{-- Submit --}}
             <div class="pt-2">
-                <button type="submit" class="w-full btn-primary text-white px-6 py-4 rounded-2xl font-extrabold shadow-lg shadow-red-900/15 inline-flex items-center justify-center gap-2">
+                <button type="submit"
+                        class="w-full btn-primary text-white px-6 py-4 rounded-2xl font-extrabold shadow-lg shadow-red-900/15 inline-flex items-center justify-center gap-2">
                     <i class="bi bi-send-fill"></i>
                     Ajukan Permohonan Cuti
                 </button>
-                <p class="text-center text-[11px] text-slate-400 font-semibold mt-3">Dengan menekan tombol ini, Anda menyatakan bahwa data yang diisi adalah benar.</p>
+                <p class="text-center text-[11px] text-slate-400 font-semibold mt-3">
+                    Dengan menekan tombol ini, Anda menyatakan bahwa data yang diisi adalah benar.
+                </p>
             </div>
+
         </form>
     </div>
 @endsection
@@ -389,7 +548,7 @@
     // -------------------------------------------------------------------------
     // File upload preview
     // -------------------------------------------------------------------------
-    const fileInput = document.getElementById('fileUpload');
+    const fileInput  = document.getElementById('fileUpload');
     const uploadText = document.getElementById('uploadText');
     const uploadHint = document.getElementById('uploadHint');
     const uploadIcon = document.getElementById('uploadIcon');
@@ -443,25 +602,25 @@
     }
 
     const ALLOWED_TYPES = [
-    'application/pdf',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'image/jpeg',
-    'image/png',
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'image/jpeg',
+        'image/png',
     ];
     const ALLOWED_EXT = ['pdf', 'docx', 'jpg', 'jpeg', 'png'];
-    const MAX_SIZE_MB = 5;
+    const MAX_SIZE_MB  = 5;
 
     fileInput.addEventListener('change', function () {
         if (!this.files || !this.files[0]) return;
 
-        const file = this.files[0];
-        const ext = file.name.split('.').pop().toLowerCase();
+        const file   = this.files[0];
+        const ext    = file.name.split('.').pop().toLowerCase();
         const sizeMB = file.size / (1024 * 1024);
 
         // Cek ekstensi
         if (!ALLOWED_EXT.includes(ext)) {
             showError(`Format file tidak diizinkan: .${ext}`);
-            this.value = ''; // Reset input
+            this.value = '';
             return;
         }
 
@@ -484,21 +643,21 @@
     });
 
     function showError(message) {
-        uploadText.innerText = message;
-        uploadText.className = 'mt-4 text-sm font-extrabold text-red-600';
-        uploadHint.innerText = 'Pilih file lain: PDF, DOCX, JPG, atau PNG (maks 5MB)';
-        uploadHint.className = 'mt-2 text-xs text-red-400 font-medium';
-        uploadIcon.innerHTML = '<i class="bi bi-x-circle-fill text-2xl text-red-500"></i>';
+        uploadText.innerText  = message;
+        uploadText.className  = 'mt-4 text-sm font-extrabold text-red-600';
+        uploadHint.innerText  = 'Pilih file lain: PDF, DOCX, JPG, atau PNG (maks 5MB)';
+        uploadHint.className  = 'mt-2 text-xs text-red-400 font-medium';
+        uploadIcon.innerHTML  = '<i class="bi bi-x-circle-fill text-2xl text-red-500"></i>';
         dropZone.classList.replace('border-slate-200', 'border-red-300');
         dropZone.classList.add('bg-red-50/40');
     }
 
     function showSuccess(file) {
-        uploadText.innerText = 'File Siap Diupload!';
-        uploadText.className = 'mt-4 text-sm font-extrabold text-emerald-700';
-        uploadHint.innerHTML = `<strong>Berhasil memilih:</strong> ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-        uploadHint.className = 'mt-2 text-xs text-emerald-700 font-medium';
-        uploadIcon.innerHTML = '<i class="bi bi-check-circle-fill text-2xl text-emerald-600"></i>';
+        uploadText.innerText  = 'File Siap Diupload!';
+        uploadText.className  = 'mt-4 text-sm font-extrabold text-emerald-700';
+        uploadHint.innerHTML  = `<strong>Berhasil memilih:</strong> ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+        uploadHint.className  = 'mt-2 text-xs text-emerald-700 font-medium';
+        uploadIcon.innerHTML  = '<i class="bi bi-check-circle-fill text-2xl text-emerald-600"></i>';
         dropZone.classList.replace('border-slate-200', 'border-emerald-300');
         dropZone.classList.add('bg-emerald-50/40');
     }

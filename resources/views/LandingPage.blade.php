@@ -11,9 +11,9 @@
 
     <style>
         :root {
-            --primary: #9E2A2B;
+            --primary:      #9E2A2B;
             --primary-dark: #781F1F;
-            --bg-body: #F1F5F9;
+            --bg-body:      #F1F5F9;
         }
 
         body {
@@ -23,7 +23,7 @@
             overflow-x: hidden;
         }
 
-        /* background image layer */
+        /* Background image layer */
         .bg-hero {
             position: relative;
             min-height: 100vh;
@@ -67,20 +67,18 @@
         .btn-primary-soft {
             background: #fff;
             color: var(--primary);
-            border: 1px solid rgba(255,255,255,0.45);
+            border: 1px solid rgba(255, 255, 255, 0.45);
             font-weight: 800;
             border-radius: 14px;
             padding: 10px 16px;
-            box-shadow: 0 10px 25px -10px rgba(0,0,0,0.35);
+            box-shadow: 0 10px 25px -10px rgba(0, 0, 0, 0.35);
         }
         .btn-primary-soft:hover {
-            background: rgba(255,255,255,0.92);
+            background: rgba(255, 255, 255, 0.92);
             color: var(--primary-dark);
         }
 
-        .hero-wrap {
-            padding: 56px 0 40px 0;
-        }
+        .hero-wrap { padding: 56px 0 40px 0; }
 
         .hero-badge {
             display: inline-flex;
@@ -88,8 +86,8 @@
             gap: 10px;
             padding: 10px 14px;
             border-radius: 999px;
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.18);
             color: #fff;
             font-weight: 700;
             font-size: 0.9rem;
@@ -104,16 +102,16 @@
         }
 
         .hero-lead {
-            color: rgba(255,255,255,0.9);
+            color: rgba(255, 255, 255, 0.9);
             max-width: 52ch;
             font-size: 1.05rem;
         }
 
         .card-glass {
-            background: rgba(255,255,255,0.92);
-            border: 1px solid rgba(255,255,255,0.55);
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.55);
             border-radius: 18px;
-            box-shadow: 0 18px 45px -20px rgba(0,0,0,0.45);
+            box-shadow: 0 18px 45px -20px rgba(0, 0, 0, 0.45);
             overflow: hidden;
         }
 
@@ -142,9 +140,7 @@
             padding: 14px 22px;
         }
 
-        .feature + .feature {
-            border-top: 1px solid #F1F5F9;
-        }
+        .feature + .feature { border-top: 1px solid #F1F5F9; }
 
         .feature-icon {
             width: 44px;
@@ -158,7 +154,7 @@
         }
 
         .feature-title { font-weight: 900; margin: 0; }
-        .feature-text { margin: 2px 0 0 0; color: #64748B; font-size: 0.92rem; }
+        .feature-text  { margin: 2px 0 0 0; color: #64748B; font-size: 0.92rem; }
 
         .cta-row {
             padding: 18px 22px 22px 22px;
@@ -189,25 +185,30 @@
         .btn-outline-light-soft:hover { background: rgba(15, 23, 42, 0.04); }
 
         .footer {
-            color: rgba(255,255,255,0.85);
+            color: rgba(255, 255, 255, 0.85);
             font-size: 0.85rem;
             padding: 22px 0 28px 0;
         }
 
         @media (max-width: 992px) {
             .hero-wrap { padding-top: 34px; }
-            .hero-lead { font-size: 1rem; }
+            .hero-lead  { font-size: 1rem; }
         }
     </style>
 </head>
 
 <body>
     <div class="bg-hero">
-        <!-- Topbar (sticky, selaras feel admin/user) -->
+
+        {{-- Topbar (sticky, selaras feel admin/user) --}}
         <header class="topbar">
             <div class="container py-3 px-3 px-md-4 d-flex align-items-center justify-content-between">
                 <a class="brand" href="#">
-                    <img src="{{ asset('logokabupatensemarang.png') }}" alt="Logo" width="40" height="40" style="object-fit: contain;">
+                    <img src="{{ asset('logokabupatensemarang.png') }}"
+                         alt="Logo"
+                         width="40"
+                         height="40"
+                         style="object-fit: contain;">
                     <div>
                         <div class="brand-title">SIPERCUT</div>
                         <div class="brand-sub">DISDIKBUDPORA KAB. SEMARANG</div>
@@ -218,22 +219,27 @@
             </div>
         </header>
 
-        <!-- Hero -->
+        {{-- Hero --}}
         <main class="container hero-wrap px-3 px-md-4">
             <div class="row g-4 align-items-center">
+
+                {{-- Hero text --}}
                 <div class="col-lg-6">
                     <div class="hero-badge">
                         <i class="bi bi-shield-check"></i>
                         Sistem Informasi Izin & Cuti Pegawai
                     </div>
 
-                    <h1 class="hero-title">Kelola Izin & Cuti Pegawai<br class="d-none d-lg-block"> dengan Cepat dan Rapi</h1>
+                    <h1 class="hero-title">
+                        Kelola Izin & Cuti Pegawai<br class="d-none d-lg-block"> dengan Cepat dan Rapi
+                    </h1>
 
                     <p class="hero-lead mb-0">
                         Satu pintu untuk pengajuan cuti, monitoring status, dan rekapitulasi.
                     </p>
                 </div>
 
+                {{-- Feature card --}}
                 <div class="col-lg-6">
                     <div class="card-glass">
                         <div class="card-head">
@@ -282,7 +288,8 @@
                         </div>
 
                         <div class="cta-row">
-                            <a href="{{ url('/login') }}" class="btn btn-gradient d-inline-flex align-items-center gap-2">
+                            <a href="{{ url('/login') }}"
+                               class="btn btn-gradient d-inline-flex align-items-center gap-2">
                                 <i class="bi bi-arrow-right-circle"></i>
                                 Masuk & Ajukan Cuti
                             </a>
@@ -290,12 +297,15 @@
                         </div>
                     </div>
                 </div>
+
             </div>
 
+            {{-- Footer --}}
             <div class="footer text-center">
                 <div class="opacity-75">© 2026 Disdikbudpora Kabupaten Semarang</div>
             </div>
         </main>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

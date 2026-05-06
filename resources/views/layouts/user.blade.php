@@ -26,14 +26,14 @@
             --shadow:      0 10px 30px -5px rgba(0,0,0,.10);
         }
 
-        body                { background: var(--bg); color: var(--text); }
+        body { background: var(--bg); color: var(--text); }
 
-        ::-webkit-scrollbar         { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track   { background: transparent; }
-        ::-webkit-scrollbar-thumb   { background: #CBD5E1; border-radius: 10px; }
+        ::-webkit-scrollbar             { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track       { background: transparent; }
+        ::-webkit-scrollbar-thumb       { background: #CBD5E1; border-radius: 10px; }
         ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
 
-        .shadow-soft    { box-shadow: var(--shadow); }
+        .shadow-soft { box-shadow: var(--shadow); }
 
         .active-menu {
             background: linear-gradient(90deg, var(--maroon), var(--maroon-dark));
@@ -42,7 +42,7 @@
             border: none;
         }
 
-        .menu-btn                    { transition: all .2s ease; }
+        .menu-btn                         { transition: all .2s ease; }
         .menu-btn:hover:not(.active-menu) { background: #FEF2F2; color: var(--maroon); }
 
         .glass-profile {
@@ -74,7 +74,10 @@
 <body class="flex h-screen overflow-hidden">
 
     {{-- Mobile overlay --}}
-    <div id="overlay" class="hidden fixed inset-0 bg-black/50 z-40 md:hidden" onclick="closeSidebar()"></div>
+    <div id="overlay"
+         class="hidden fixed inset-0 bg-black/50 z-40 md:hidden"
+         onclick="closeSidebar()">
+    </div>
 
     {{-- Sidebar partial --}}
     @include('user.partials.sidebar')
@@ -111,10 +114,10 @@
                 {{-- User dropdown --}}
                 <div class="relative">
                     <button type="button"
-                        id="userMenuBtn"
-                        class="glass-profile px-4 py-2 rounded-full flex items-center gap-3 text-white focus:outline-none"
-                        aria-haspopup="true"
-                        aria-expanded="false">
+                            id="userMenuBtn"
+                            class="glass-profile px-4 py-2 rounded-full flex items-center gap-3 text-white focus:outline-none"
+                            aria-haspopup="true"
+                            aria-expanded="false">
                         <div class="w-9 h-9 rounded-full bg-white text-[var(--maroon)] flex items-center justify-center font-extrabold text-sm shadow-inner">
                             {{ strtoupper(substr($authUser->name ?? 'U', 0, 2)) }}
                         </div>
@@ -132,7 +135,7 @@
                         <form action="{{ route('logout') }}" method="POST">
                             @csrf
                             <button type="submit"
-                                class="w-full text-left rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50">
+                                    class="w-full text-left rounded-lg px-3 py-2 text-sm text-red-600 hover:bg-red-50">
                                 Logout
                             </button>
                         </form>
