@@ -70,11 +70,6 @@ class LeaveRequest extends Model
         return $query->where('status', self::STATUS_PENDING);
     }
 
-    public function scopeApproved(Builder $query): Builder
-    {
-        return $query->where('status', self::STATUS_APPROVED);
-    }
-
     public function scopeRejected(Builder $query): Builder
     {
         return $query->where('status', self::STATUS_REJECTED);
@@ -83,6 +78,16 @@ class LeaveRequest extends Model
     public function scopeForUser(Builder $query, int $userId): Builder
     {
         return $query->where('user_id', $userId);
+    }
+
+    public function scopeAnnualLeave(Builder $query): Builder
+    {
+        return $query->where('jenis_cuti', 'Cuti Tahunan');
+    }
+
+    public function scopeApproved(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_APPROVED);
     }
 
     // =========================================================================

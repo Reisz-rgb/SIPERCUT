@@ -150,13 +150,16 @@ class AdminController extends Controller
             'rejection_reason' => 'nullable|string',
         ]);
 
-        $pengajuan = LeaveRequest::findOrFail($id);
-        $pengajuan->update([
-            'status'           => $validated['status'],
-            'rejection_reason' => $validated['rejection_reason'] ?? null,
-        ]);
+        DB::transaction(function () use ($id, $validated) {
+            $pengajuan = LeaveRequest::lockForUpdate()->findOrFail($id);
+            
+            $pengajuan->update([
+                'status'           => $validated['status'],
+                'rejection_reason' => $validated['rejection_reason'] ?? null,
+            ]);
 
-        $this->syncAnnualLeaveBalance($pengajuan);
+            $this->syncAnnualLeaveBalance($pengajuan);
+        });
 
         return back()->with('success', 'Keputusan berhasil disimpan!');
     }
@@ -270,14 +273,14 @@ class AdminController extends Controller
      */
     private function syncAnnualLeaveBalance(LeaveRequest $pengajuan): void
     {
-        // Trim dan case-insensitive agar tidak gagal karena spasi/huruf
-        $jenis = trim($pengajuan->jenis_cuti);
-        $year  = Carbon::parse($pengajuan->start_date)->year;
-
-        // Selalu recalculate untuk semua jenis cuti yang mempengaruhi kuota tahunan
-        if (in_array($jenis, ['Cuti Tahunan', 'Cuti Besar'], true)) {
-            LeaveBalance::recalculateAnnualBalances((int) $pengajuan->user_id, $year);
+        if (! $pengajuan->isAnnualLeave()) {
+            return;
         }
+
+        // Pastikan hanya admin/authorized role yang sampai ke sini
+        // Gate check ada di middleware route, bukan di sini
+        $year = $pengajuan->start_date->year;
+        LeaveBalance::recalculateAnnualBalances((int) $pengajuan->user_id, $year);
     }
 
     /**
@@ -353,7 +356,7 @@ class AdminController extends Controller
     /**
      * Response dashboard kosong saat tabel belum ada.
      */
-    private function dashboardEmptyResponse(int $totalPegawai, $listPegawai)
+    private function dashboardEmptyResponse(int $totalPegawai, $listPegawai, $pendingActivation)
     {
         return view('admin.dashboard_admin', [
             'totalPengajuan'   => 0,
